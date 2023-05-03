@@ -327,4 +327,4 @@ Execute the task
 ```
 
 ## Trust Flow Across Forest
-![Screenshot](https://drive.google.com/file/d/1argK-YbdzRrBeYFCMk34fS7Ln4NMuKHq/view)
+<img src="Trust_flow_across_forest.png" width="650">
