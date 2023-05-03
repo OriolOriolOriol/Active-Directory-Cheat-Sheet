@@ -177,11 +177,11 @@ o
 			- mimikatz.exe '"lsadump::dcsync" "/user:$DOMAIN\krbtgt"'
 			- Invoke-Mimikatz -Command  '"lsadump::dcsync" "/user:$DOMAIN\krbtgt"'
 ```
-## Silver Ticket [Domain Admins]
+## Silver Ticket [Conoscenza Hash account service. Ovviamente Local Admin nella macchina di partenza]
 ### I Silver Ticket sono ticket TGS (Ticket Granting Service) contraffatti creati da un utente malintenzionato utilizzando l'hash della password di un account di servizio compromesso. Quando un utente malintenzionato ha violato la password di un account di servizio, potrebbe sembrare che non avrebbe bisogno di falsificare i ticket per agire per suo conto. Mentre un biglietto d'oro è un TGT falso valido per ottenere l'accesso a qualsiasi servizio Kerberos, il biglietto d'argento è un TGS contraffatto. Ciò significa che l'ambito Silver Ticket è limitato a qualsiasi servizio destinato a un server specifico.
 ### Mentre un ticket Golden viene crittografato/firmato con l'account del servizio Kerberos di dominio (KRBTGT) , un ticket Silver viene crittografato/firmato dall'account del servizio (credenziale dell'account del computer estratta dal SAM locale del computer o credenziale dell'account del servizio)
 ### I biglietti d'argento possono essere più pericolosi dei biglietti d'oro: sebbene l'ambito sia più limitato dei biglietti d'oro, l'hash richiesto è più facile da ottenere e non c'è comunicazione con un controller di dominio quando li si utilizza, quindi il rilevamento è più difficile di quelli d'oro Biglietti.
-## Prerequisito: Per creare o falsificare un Silver Ticket, l'attaccante deve conoscere i dati della password (hash della password) per il servizio di destinazione. Se il servizio di destinazione è in esecuzione nel contesto di un account utente, come MS-SQL, è necessario l'hash della password dell'account di servizio per creare un Silver Ticket. (https://book.hacktricks.xyz/windows-hardening/active-directory-methodology/silver-ticket)
+## Prerequisito: Per creare o falsificare un Silver Ticket, l'attaccante deve conoscere i dati della password (hash) per il servizio di destinazione. Se il servizio di destinazione è in esecuzione nel contesto di un account utente, come MS-SQL, è necessario l'hash della password dell'account di servizio per creare un Silver Ticket. (https://book.hacktricks.xyz/windows-hardening/active-directory-methodology/silver-ticket)
 - Servizio CIFS (Ma possono essere altri servizi come HOST). Il servizio CIFS permette di accedere al file system della vittima.
 ```
 			- powershell -ep bypass
@@ -242,6 +242,7 @@ Execute the task
 			- klist
 ```	
 
+## Uncontrained Delegation 
 
 ## MSSQL Servers
 ### I server MS SQL sono generalmente distribuiti in abbondanza in un dominio Windows.
@@ -262,7 +263,7 @@ Execute the task
 
 
 ## DSRM (Directory Services Restore Mode) [Domain Admins]
-### C'è un local administrator su ogni DC chiamato Administrator la cui password è DSRM password. Tale password èrichiesta quando un server è promosso a DC e viene cambiata raramente. Quindi è possibile usare NTLM hash di questo user per accedere a DC.
+### C'è un local administrator su ogni DC chiamato Administrator la cui password è DSRM password. Tale password è richiesta quando un server è promosso a DC e viene cambiata raramente. Quindi è possibile usare NTLM hash di questo user per accedere a DC.
 ## Prerequisiti: Richiesto Domain Admins privileges
 ```
 			- powershell -ep bypass
@@ -326,3 +327,4 @@ Execute the task
 ```
 
 ## Trust Flow Across Forest
+![Screenshot](https://drive.google.com/file/d/1argK-YbdzRrBeYFCMk34fS7Ln4NMuKHq/view)
