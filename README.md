@@ -327,9 +327,10 @@ Execute the task
 ```
 
 ## Trust Flow Across Forest
-<img src="Trust_flow_across_forest.png" width="650">
-<img src="Trust_flow_across_forest_1.png" width="650">
-## Da un DC domain possiamo forgiare un TGT (Golden Ticket) per un Enterprise Admins. Passiamo da un Domain Admins ad un Enterprise Admins (riconosciuto perchè il suo SID finisce con 519
+<img src="Trust_flow_across_forest.png" width="400">
+<img src="Trust_flow_across_forest_1.png" width="400">
+
+### Da un DC domain possiamo forgiare un TGT (Golden Ticket) per un Enterprise Admins. Passiamo da un Domain Admins ad un Enterprise Admins (riconosciuto perchè il suo SID finisce con 519.Possiede l'accesso amministrativo a tutti i domini in una foresta)
 ```
 			- powershell -ep bypass
 			- Import-Module Invoke-Mimikatz.ps1
