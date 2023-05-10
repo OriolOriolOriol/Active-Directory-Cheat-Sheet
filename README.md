@@ -458,3 +458,6 @@ Execute the task
 			- klist (verifico di avere il ticket TGS)
 			- ls \\mcorpdc.moneycorp.local\C$
 ```
+
+## DCShadow
+### DCShadow registra temporaneamente un nuovo controller di dominio nel dominio di destinazione e lo utilizza per "spingere" attributi come SIDHistory, SPN ecc.) su oggetti specificati senza lasciare i registri delle modifiche per l'oggetto modificato! Il nuovo controller di dominio viene registrato modificando il contenitore della configurazione, gli SPN di un oggetto computer esistente e un paio di servizi RPC. Poiché gli attributi vengono modificati da un controller di dominio", non sono presenti registri di modifica della directory nel controller di dominio effettivo per l'oggetto di destinazione. Per impostazione predefinita, i privilegi DA sono necessari per utilizzare DCShadow. La macchina dell'aggressore deve far parte del dominio principale.
