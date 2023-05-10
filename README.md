@@ -258,6 +258,7 @@ Execute the task
 ## MSSQL Servers [Local Admin on machine]
 ### I server MS SQL sono generalmente distribuiti in abbondanza in un dominio Windows.
 ### I server SQL offrono ottime possibilità di spostamento laterale, in quanto gli utenti del dominio possono essere mappati su ruoli di database.
+### Un link database consente a un server SQL di accedere a sorgenti di dati esterni come altri SQL Servers. Se presenti è possibile eseguire procedure tramite questi database link
 
 ```
 			- powershell -ep bypass
