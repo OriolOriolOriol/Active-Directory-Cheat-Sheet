@@ -32,7 +32,7 @@ $host.ui.RawUI.WindowTitle = "Claudione"
 
 ### Disable Firewall
 ```
-Set-MpPreference -DisableRealtimeMonitoring $ture -Verbose
+Set-MpPreference -DisableRealtimeMonitoring $true -Verbose
 
 Set-MpPreference -DisableIOAVprotection $true -Verbose
 ```
