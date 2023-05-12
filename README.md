@@ -532,6 +532,7 @@ Invoke-Mimikatz -Command '"lsadump::dcsync /user:<domain>\krbtgt"'
 ```
 ## ACL: Security Descriptors
 ### è possibile modificare i security descriptors (info clome Owner, primary group, DACL e SACL) di molteplifi  metodi di accesso remoto (oggetti proteggibili) per consentire l'accesso agli utenti non amministratori. Servono privilegi amministratori
+### https://book.hacktricks.xyz/windows-hardening/active-directory-methodology/security-descriptors
 
 ### SecurityDescriptor - WMI
 ```
