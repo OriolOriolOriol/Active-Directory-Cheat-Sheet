@@ -229,7 +229,7 @@ net user <username> <password> /add /Y   && net localgroup administrators <usern
 ## Il database Security Account Manager (SAM) è dove Windows memorizza le informazioni relative agli account degli utenti. Memorizza i nomi utente e gli hash delle password degli utenti e viene utilizzato per autenticare gli utenti quando cercano di effettuare l’accesso e fornire la password.
 ## LSASS è un processo in modalità utente responsabile della politica di sicurezza del sistema locale (ad esempio quali utenti sono autorizzati ad accedere alla macchina, politiche di password, i privilegi concessi a utenti e gruppi e le impostazioni di controllo della sicurezza del sistema). Il servizio LSASS (Local Security Authority Subsystem Service) archivia le credenziali in memoria per conto degli utenti con sessioni di Windows attive. Le credenziali archiviate consentono agli utenti di accedere senza problemi alle risorse di rete, come condivisioni di file, cassette postali di Exchange Server e siti di SharePoint, senza reinserire le proprie credenziali per ciascun servizio remoto.
 
-- Estrazioen dal registro per recupero NTLM dal database SAM
+- Estrazione dal registro per recupero NTLM dal database SAM
 ```
 reg save HKLM\sam sam
 
