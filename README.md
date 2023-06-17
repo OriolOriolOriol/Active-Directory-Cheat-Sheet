@@ -24,7 +24,10 @@ $env:PSExecutionPolicyPreference="bypass"
 ```
 ### Use this parameter to not print errors in Powershell
 ```
-ErrorAction SilentlyContinue	
+ -ErrorAction SilentlyContinue
+
+Esempio:
+Get-Item -Path $_ -ErrorAction SilentlyContinue	
 ```
 ### Rename Powershell
 ```
