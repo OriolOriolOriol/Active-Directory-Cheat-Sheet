@@ -242,8 +242,9 @@ net user <username> <password> /add /Y   && net localgroup administrators <usern
 ```
 # Lateral-Movement
 ## Archiviazione e recupero credenziali memorizzate [Local Admin nella macchina]
-## Il database Security Account Manager (SAM) è dove Windows memorizza le informazioni relative agli account degli utenti. Memorizza i nomi utente e gli hash delle password degli utenti e viene utilizzato per autenticare gli utenti quando cercano di effettuare l’accesso e fornire la password.
-## Local Administrator Security Solution (LASS) è una soluzione di sicurezza fornita da Microsoft. Essa mira a migliorare la sicurezza degli account amministratore locale sui computer Windows. LASS permette di proteggere gli account amministratore locale da attacchi di forza bruta e accessi non autorizzati. Questo viene fatto limitando il numero di tentativi di accesso, utilizzando criteri di password complessi e registrando gli eventi di accesso per monitorare l'attività dell'account amministratore locale. PROTEGGE GLI ACCOUNT DI AMINISTRATRORE LOCALE.
+###SAM (Security Accounts Manager) è un file di database presente nei sistemi operativi Windows. Contiene le informazioni sugli account degli utenti locali, inclusi i nomi degli account, le relative password hash e altre informazioni associate. Il file SAM viene utilizzato per autenticare gli utenti locali al momento dell'accesso al sistema.
+### LSASS (Local Security Authority Subsystem Service) è un servizio di sistema che gira su un sistema operativo Windows. È responsabile della gestione delle operazioni di autenticazione e delle politiche di sicurezza locali. LSASS utilizza il file SAM per verificare l'autenticità degli account degli utenti locali. Esso carica il file SAM in memoria durante l'avvio del sistema e gestisce le richieste di autenticazione, verificando le password degli utenti rispetto alle corrispondenti hash presenti nel file SAM.
+###Riepilogo: Quindi, in breve, il SAM è il file che contiene le informazioni sugli account degli utenti locali, mentre LSASS è il servizio che utilizza il file SAM per autenticare gli utenti e gestire le operazioni di autenticazione nel sistema operativo Windows.
 ### LSASS è responsabile dei componenti seguenti: 
 * Autorità di sicurezza locale
 * Servizio NetLogon
