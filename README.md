@@ -782,6 +782,8 @@ Invoke-Mimikatz -Command '"kerberos::ptt [path ticket.kirbi]
 
 ls \\mcorpdc.moneycorp.local\C$
 ```
+## DCSYNC
+### DCSync è una variante del dumping delle credenziali che può essere utilizzata per acquisire informazioni sensibili da un controller di dominio. Invece di eseguire codice dannoso riconoscibile, l'azione funziona abusando dell'interfaccia di programmazione delle applicazioni (API) del controller di dominio per simulare il processo di replica da un controller di dominio remoto. Qualsiasi membro dei gruppi Administrators, Domain Admins, Enterprise Admin o account di computer sul controller di dominio è in grado di eseguire DCSync per estrarre i dati delle password da Active Directory, che possono includere hash attuali e storici di account potenzialmente utili come KRBTGT e Administrators. Gli hash possono essere utilizzati per creare un Golden Ticket da utilizzare per passare il Ticket o modificare la password di un account, come indicato nella sezione Manipolazione degli account. La funzionalità DCSync è stata inclusa nel modulo "lsadump" di Mimikatz. Lsadump include anche NetSync, che esegue la funzione DCSync, mentre il modulo "lsadump" è stato incluso nel modulo "lsadump" di Mimikatz.
 
 ## Trust Flow Across Forest
 ## Across the Forest usando Trust Ticket
