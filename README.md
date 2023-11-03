@@ -591,6 +591,7 @@ Get-RemoteCachedCredential -Computername <computername> -Verbose (Retrieve domai
 
 ## Contrained Delegation [Local Admin sulla macchina con la delegazione attiva]
 <img src="CD1.png" width="800">
+
 ### 1) L'utente esegue l'autenticazione al controller di dominio (DC) utilizzando il nome utente e la password. Il KDC verifica le credenziali dell'utente ed emette un Ticket Granting Ticket (TGT) per l'utente.
 ### 2) Utilizzando il TGT ottenuto, l'utente richiede un ticket di servizio per il servizio web; il KDC verifica l'autenticità del TGT e, se tutto va bene, concede il ticket di servizio al servizio web.
 ### 3) Il servizio web, agendo ora per conto dell'utente, avvia una nuova richiesta al servizio SQL, presentando al servizio SQL il ticket TGS ricevuto.
@@ -616,6 +617,7 @@ Invoke-Mimikatz -Command '"lsadump:dcsync /user:dcorp\krbtgt"'
 
 ## Uncontrained Delegation [Local Admin on machine]
 <img src="UC1.png" width="800">
+
 ### 1) Un utente si autentica al KDC (Kerberos Domain Controller) inviando una richiesta crittografata con le proprie credenziali. Il KDC verifica la loro identità e invia all'utente un ticket TGT .
 ### 2) L' utente riceve il ticket TGT e lo rispedisce al KDC, richiedendo un ticket di servizio per un servizio specifico, diciamo un servizio web. Il KDC controlla la validità del TGT e restituisce il ticket di servizio (TGS) per il servizio richiesto.
 ### 3) A questo punto l'utente può utilizzare il ticket di servizio (TGS) per accedere al servizio web richiesto. Tuttavia, se il servizio richiesto come il servizio Web nel nostro esempio deve accedere a un altro servizio come SQL , l'utente deve ottenere un ticket TGT inoltrabile per passarlo al servizio Web insieme al ticket TGS. Quindi un TGS per il servizio web + tgt per servizio SQL  vengono inviati al servizio web.
