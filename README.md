@@ -583,7 +583,14 @@ Get-RemoteCachedCredential -Computername <computername> -Verbose (Retrieve domai
 ## Differenza tra Contrained Delegation Uncontrained Delegation e Resource Based Constrained Delegation - RBCD
 <img src="UC_C.png" width="800">
 
+### Delega vincolata basata sulle risorse (RBCD). Introdotta con Windows Server 2012, questa soluzione permette di superare alcune problematiche legate alla Delega Vincolata (Responsabilità, delega interdomini,…). Senza entrare troppo nei dettagli, si sposta la responsabilità della delega. Mentre nella delega vincolata è il server di inoltro che contiene l'elenco dei servizi di destinazione consentiti, nel caso della delega vincolata basata sulle risorse sono le risorse (o i servizi) che dispongono di un elenco di account di cui si fidano per la delega.
+<img src="RBCD.png" width="800">
+
+### Uncontrained delegation: il server o l'account del servizio a cui viene concesso questo diritto è in grado di impersonare un utente per autenticarsi su qualsiasi servizio su qualsiasi host .
+### Constrained delegation: Se un computer o un account di servizio ha il flag di Delega Vincolata impostato, a questo flag sarà associato un elenco di servizi autorizzati. Ad esempio, nell'esempio precedente (server Web e file server), il server Web avrà il flag di delega vincolata che indica che questo account può rappresentare solo alcuni utenti rispetto al CIFSservizio ospitato da SERVER01, il file server.
+
 ## Contrained Delegation [Local Admin sulla macchina con la delegazione attiva]
+<img src="CD.png" width="800">
 ### 1) L'utente esegue l'autenticazione al controller di dominio (DC) utilizzando il nome utente e la password. Il KDC verifica le credenziali dell'utente ed emette un Ticket Granting Ticket (TGT) per l'utente.
 ### 2) Utilizzando il TGT ottenuto, l'utente richiede un ticket di servizio per il servizio web; il KDC verifica l'autenticità del TGT e, se tutto va bene, concede il ticket di servizio al servizio web.
 ### 3) Il servizio web, agendo ora per conto dell'utente, avvia una nuova richiesta al servizio SQL, presentando al servizio SQL il ticket TGS ricevuto.
@@ -608,6 +615,7 @@ Invoke-Mimikatz -Command '"lsadump:dcsync /user:dcorp\krbtgt"'
 ```	
 
 ## Uncontrained Delegation [Local Admin on machine]
+<img src="UC.png" width="800">
 ### 1) Un utente si autentica al KDC (Kerberos Domain Controller) inviando una richiesta crittografata con le proprie credenziali. Il KDC verifica la loro identità e invia all'utente un ticket TGT .
 ### 2) L' utente riceve il ticket TGT e lo rispedisce al KDC, richiedendo un ticket di servizio per un servizio specifico, diciamo un servizio web. Il KDC controlla la validità del TGT e restituisce il ticket di servizio (TGS) per il servizio richiesto.
 ### 3) A questo punto l'utente può utilizzare il ticket di servizio (TGS) per accedere al servizio web richiesto. Tuttavia, se il servizio richiesto come il servizio Web nel nostro esempio deve accedere a un altro servizio come SQL , l'utente deve ottenere un ticket TGT inoltrabile per passarlo al servizio Web insieme al ticket TGS. Quindi un TGS per il servizio web + tgt per servizio SQL  vengono inviati al servizio web.
