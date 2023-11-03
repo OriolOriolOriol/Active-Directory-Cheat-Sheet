@@ -580,6 +580,8 @@ Get-RemoteCachedCredential -Computername <computername> -Verbose (Retrieve domai
 ```
 
 # Domain-privilege-escalation
+## Differenza tra Contrained Delegation Uncontrained Delegation e Resource Based Constrained Delegation - RBCD
+
 
 ## Contrained Delegation [Local Admin sulla macchina con la delegazione attiva]
 ### 1) L'utente esegue l'autenticazione al controller di dominio (DC) utilizzando il nome utente e la password. Il KDC verifica le credenziali dell'utente ed emette un Ticket Granting Ticket (TGT) per l'utente.
