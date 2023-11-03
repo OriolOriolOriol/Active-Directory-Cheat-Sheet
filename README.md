@@ -821,7 +821,7 @@ ls \\mcorpdc.moneycorp.local\C$
 ```
 
 # DCShadow
-### DCShadow allows an attacker with enough privileges to create a rogue Domain Controller and push changes to the DC Active Directory objects.
+### DCShadow consente a un utente malintenzionato con sufficienti privilegi di creare un controller di dominio non autorizzato e di apportare modifiche agli oggetti di Active Directory del DC.
 ### Per impostazione predefinita, i privilegi DA sono necessari per utilizzare DCShadow. La macchina dell'aggressore deve far parte del dominio principale.
 ### Per questo attacco sono necessarie due shell: una in esecuzione con privilegi SYSTEM e una con privilegi di un utente che fa parte del gruppo Domain Admins.
 
