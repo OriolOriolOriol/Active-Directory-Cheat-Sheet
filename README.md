@@ -85,6 +85,11 @@ Import-Module SharpHound.ps1
 Invoke-BloodHound -CollectionMethod -All
 ```
 
+### S4U2self (Service for User to Self): Immagina che tu abbia bisogno di ottenere un biglietto di servizio per te stesso, ad esempio per accedere a una risorsa su un server. Con l'estensione S4U2self, un servizio può ottenere questo biglietto di servizio per te senza dover passare attraverso l'autenticazione diretta come avviene normalmente. È come se un rappresentante ottenesse un biglietto d'ingresso per te, consentendoti di accedere alla risorsa senza dover passare personalmente attraverso tutti i controlli di sicurezza.
+
+### S4U2proxy (Service for User to Proxy): Ora, immagina che tu abbia bisogno di accedere a un'altra risorsa su un altro server, ma non puoi farlo direttamente perché non hai i permessi necessari. Con l'estensione S4U2proxy, un servizio può agire come "proxy" per te, ottenendo un biglietto di servizio per accedere alla risorsa desiderata. È come se tu delegassi a qualcuno il compito di ottenere un permesso speciale per te, consentendoti di accedere alla risorsa indirettamente attraverso il servizio proxy.
+
+
 # Domain-Enumeration
 
 ### PowerView:
