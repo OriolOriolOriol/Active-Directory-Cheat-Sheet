@@ -441,8 +441,28 @@ Tutte le info recuperate sono su C:\Windows\system32\kiwissp.log
 ```
 
 
-## ACL: AdminSDHolder (Domain Admins sull'oggetto AdminSDHolder)
-### AdminSDHolder è un container e viene utilizzato per controllare le autorizzazioni utilizzando una ACL per alcuni gruppi privilegiati incorporati ( chiamati gruppi protetti come Domain Admins,Backup Operators,Server Operators..). 
+## AdminSDHolder (Domain Admins sull'oggetto AdminSDHolder)
+
+### Funzione di AdminSDHolder: AdminSDHolder memorizza un insieme di permessi di sicurezza predefiniti, chiamati Security Descriptor. Gli account che appartengono a gruppi protetti, come gli amministratori di dominio o gli amministratori dello schema, ricevono periodicamente una copia di questi permessi. Questo processo è gestito da un meccanismo chiamato SDProp (Security Descriptor Propagator), che viene eseguito ogni ora di default.
+
+Immagina di avere un amministratore in Active Directory, ad esempio un utente chiamato "AdminUser", che appartiene al gruppo "Domain Admins". Ecco un esempio di come funziona il processo:
+
+    - Creazione dell'utente: "AdminUser" viene creato e aggiunto al gruppo "Domain Admins".
+    
+    - Esecuzione del SDProp: Ogni ora, il processo SDProp verifica se gli utenti nei gruppi protetti hanno i permessi di sicurezza corretti.
+    
+    - Confronto e aggiornamento: Se "AdminUser" ha dei permessi che non corrispondono a quelli definiti in AdminSDHolder, SDProp sovrascrive i permessi di "AdminUser" con quelli memorizzati in AdminSDHolder.
+    
+    - Protezione continua: Questo assicura che qualsiasi modifica non autorizzata ai permessi di "AdminUser" venga corretta automaticamente nel prossimo ciclo di SDProp.
+
+### Esempio pratico dell'importanza di AdminSDHolder
+
+Supponiamo che un amministratore malintenzionato tenti di modificare i permessi di "AdminUser" per ridurre il suo livello di accesso:
+
+    Modifica manuale: L'amministratore cambia i permessi di "AdminUser".
+    SDProp interviene: Durante la prossima esecuzione (che avviene entro un'ora), SDProp rileva che i permessi di "AdminUser" non corrispondono a quelli di AdminSDHolder.
+    Ripristino dei permessi: SDProp sovrascrive i permessi di "AdminUser" con quelli predefiniti, ripristinando la configurazione di sicurezza originale.
+
 ### L'ACL può essere visualizzato sull'oggetto AdminSDHolder stesso. Utenti e computer -> System -> AdminSDHolder e selezionare Proprietà. Security Descriptor Propagator (SDPROP) viene eseguito ogni ora e confronta l'ACL dei gruppi e dei membri protetti con l'ACL di AdminSDHolder e le eventuali differenze vengono sovrascritte nell'ACL dell'oggetto.
 
 ```
